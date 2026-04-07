@@ -6,6 +6,7 @@ import { CameraRig } from '../core/components/canvas/CameraRig';
 import { PlayerCard } from '../games/chess/components/ui/PlayerCard';
 import { SettingsPanel } from '../games/chess/components/ui/SettingsPanel';
 import { useChessSettingsStore } from '../games/chess/stores/useChessSettingsStore';
+import { useTranslation } from '../core/i18n/useTranslation';
 import type { GameMode, PieceColor } from '../games/chess/engine/types';
 
 /** Chess game page — 3D scene with game UI overlay */
@@ -30,8 +31,9 @@ export function ChessPage() {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const playerColor = useChessSettingsStore((s) => s.playerColor);
+  const { t } = useTranslation();
 
-  const statusText = getStatusText(gameStatus, winner, isCheck, turn, isAIThinking, gameMode);
+  const statusText = getStatusText(gameStatus, winner, isCheck, turn, isAIThinking, gameMode, t);
   const isPlaying = gameStatus === 'playing' || gameStatus === 'idle';
 
   // Captures: each side displays the pieces it has taken
@@ -41,9 +43,12 @@ export function ChessPage() {
   // The opponent is whichever color the human is NOT playing
   const opponentColor: PieceColor = playerColor === 'w' ? 'b' : 'w';
 
-  const youName = gameMode === 'ai' ? 'You' : playerColor === 'w' ? 'White' : 'Black';
-  const opponentName =
-    gameMode === 'ai' ? 'AI' : opponentColor === 'w' ? 'White' : 'Black';
+  const youName = gameMode === 'ai'
+    ? t('chess.you')
+    : playerColor === 'w' ? t('chess.white') : t('chess.black');
+  const opponentName = gameMode === 'ai'
+    ? t('chess.ai')
+    : opponentColor === 'w' ? t('chess.white') : t('chess.black');
 
   const youTimeMs = playerColor === 'w' ? whiteTimeMs : blackTimeMs;
   const opponentTimeMs = playerColor === 'w' ? blackTimeMs : whiteTimeMs;
@@ -81,7 +86,7 @@ export function ChessPage() {
                 px-3 py-2 text-[12px] text-text-secondary hover:text-text-primary
                 hover:bg-bg-hover/70 transition-colors disabled:opacity-30 disabled:pointer-events-none"
             >
-              Undo
+              {t('btn.undo')}
             </button>
             <button
               onClick={resetGame}
@@ -89,13 +94,13 @@ export function ChessPage() {
                 px-3 py-2 text-[12px] text-text-secondary hover:text-text-primary
                 hover:bg-bg-hover/70 transition-colors"
             >
-              New Game
+              {t('btn.newGame')}
             </button>
             <button
               onClick={() => setSettingsOpen(true)}
               className="bg-bg-primary/70 backdrop-blur-lg border border-border-subtle rounded-lg
                 p-2 text-text-secondary hover:text-text-primary hover:bg-bg-hover/70 transition-colors"
-              aria-label="Open settings"
+              aria-label={t('settings.openSettings')}
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path
@@ -143,7 +148,7 @@ export function ChessPage() {
         <div className="absolute top-16 right-4 pointer-events-auto">
           <div className="bg-bg-primary/70 backdrop-blur-lg border border-border-subtle rounded-lg
             px-3 py-2.5 shadow-md max-h-60 overflow-y-auto w-36">
-            <div className="text-[10px] text-text-muted uppercase tracking-wider mb-1.5">Moves</div>
+            <div className="text-[10px] text-text-muted uppercase tracking-wider mb-1.5">{t('chess.moves')}</div>
             <div className="flex flex-wrap gap-x-1 gap-y-0.5">
               {moveHistory.map((m, i) => (
                 <span key={i} className={`text-[11px] font-mono ${
@@ -168,7 +173,7 @@ export function ChessPage() {
       {pendingPromotion && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-10">
           <div className="bg-bg-card border border-border-primary rounded-xl p-5 shadow-lg">
-            <p className="text-sm text-text-primary mb-3 text-center">Choose promotion</p>
+            <p className="text-sm text-text-primary mb-3 text-center">{t('chess.choosePromotion')}</p>
             <div className="flex gap-3">
               {(['q', 'r', 'b', 'n'] as const).map((piece) => (
                 <button
@@ -186,7 +191,7 @@ export function ChessPage() {
               onClick={cancelPromotion}
               className="mt-3 w-full text-xs text-text-muted hover:text-text-secondary transition-colors"
             >
-              Cancel
+              {t('btn.cancel')}
             </button>
           </div>
         </div>
@@ -209,24 +214,24 @@ function getStatusText(
   turn: 'w' | 'b',
   isAIThinking: boolean,
   gameMode: GameMode,
+  t: (key: string) => string,
 ): string {
   switch (status) {
     case 'checkmate':
-      return `Checkmate! ${winner === 'w' ? 'White' : 'Black'} wins`;
+      return winner === 'w' ? t('chess.checkmateWhite') : t('chess.checkmateBlack');
     case 'stalemate':
-      return 'Stalemate — Draw';
+      return t('chess.stalemate');
     case 'draw':
-      return 'Draw';
+      return t('chess.draw');
     case 'resigned':
-      return `${winner === 'w' ? 'White' : 'Black'} wins by resignation`;
+      return winner === 'w' ? t('chess.resignedWhite') : t('chess.resignedBlack');
     case 'timeout':
-      return `${winner === 'w' ? 'White' : 'Black'} wins on time`;
+      return winner === 'w' ? t('chess.timeoutWhite') : t('chess.timeoutBlack');
     case 'playing':
-      if (isAIThinking && gameMode === 'ai') return 'AI is thinking…';
-      return isCheck
-        ? `${turn === 'w' ? 'White' : 'Black'} in check!`
-        : `${turn === 'w' ? 'White' : 'Black'} to move`;
+      if (isAIThinking && gameMode === 'ai') return t('chess.aiThinking');
+      if (isCheck) return turn === 'w' ? t('chess.whiteInCheck') : t('chess.blackInCheck');
+      return turn === 'w' ? t('chess.whiteToMove') : t('chess.blackToMove');
     default:
-      return 'Ready to play';
+      return t('chess.readyToPlay');
   }
 }

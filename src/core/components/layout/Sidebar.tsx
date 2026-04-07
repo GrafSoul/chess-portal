@@ -1,12 +1,13 @@
 import { NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore } from '../../stores/useUIStore';
+import { useTranslation } from '../../i18n/useTranslation';
 import { ROUTES } from '../../types/common';
 
 const navItems = [
   {
     path: ROUTES.HOME,
-    label: 'Portal',
+    labelKey: 'nav.portal',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -16,7 +17,7 @@ const navItems = [
   },
   {
     path: ROUTES.CHESS,
-    label: 'Chess',
+    labelKey: 'nav.chess',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M8 16l-1.447.724a1 1 0 0 0-.553.894V20h12v-2.382a1 1 0 0 0-.553-.894L16 16" />
@@ -29,7 +30,7 @@ const navItems = [
   },
   {
     path: ROUTES.STATS,
-    label: 'Statistics',
+    labelKey: 'nav.statistics',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <line x1="18" y1="20" x2="18" y2="10" />
@@ -43,6 +44,7 @@ const navItems = [
 /** Collapsible sidebar navigation — Linear/Figma style */
 export function Sidebar() {
   const { sidebarOpen, toggleSidebar } = useUIStore();
+  const { t } = useTranslation();
 
   return (
     <motion.aside
@@ -77,7 +79,7 @@ export function Sidebar() {
               transition={{ duration: 0.15 }}
             >
               <span className="text-sm font-semibold text-text-primary whitespace-nowrap tracking-tight">
-                Chess Portal
+                {t('nav.brand')}
               </span>
             </motion.div>
           )}
@@ -123,7 +125,7 @@ export function Sidebar() {
                       exit={{ opacity: 0, width: 0 }}
                       transition={{ duration: 0.12 }}
                     >
-                      {item.label}
+                      {t(item.labelKey)}
                     </motion.span>
                   )}
                 </AnimatePresence>
@@ -147,7 +149,7 @@ export function Sidebar() {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.12 }}
               >
-                Ready
+                {t('nav.ready')}
               </motion.span>
             )}
           </AnimatePresence>

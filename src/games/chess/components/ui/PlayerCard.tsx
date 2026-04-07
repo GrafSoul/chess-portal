@@ -1,4 +1,5 @@
 import { ClockManager } from '../../engine/ClockManager';
+import { useTranslation } from '../../../../core/i18n/useTranslation';
 import type { CapturedPiece, PieceColor, PieceType } from '../../engine/types';
 
 interface PlayerCardProps {
@@ -60,6 +61,7 @@ export function PlayerCard({
   isThinking = false,
   captured,
 }: PlayerCardProps) {
+  const { t } = useTranslation();
   const isLowTime = timeMs < LOW_TIME_THRESHOLD_MS && isFinite(timeMs);
 
   // Sort captured pieces by value descending so big pieces appear first
@@ -90,7 +92,7 @@ export function PlayerCard({
         </div>
         {isThinking && (
           <span className="text-[10px] text-accent uppercase tracking-wider animate-pulse">
-            thinking
+            {t('chess.thinking')}
           </span>
         )}
       </div>
@@ -136,7 +138,7 @@ export function PlayerCard({
             )}
           </>
         ) : (
-          <span className="text-[10px] text-text-muted/60 italic">no captures</span>
+          <span className="text-[10px] text-text-muted/60 italic">{t('chess.noCaptures')}</span>
         )}
       </div>
     </div>

@@ -3,7 +3,26 @@ import { CLOCK_PRESETS } from '../../config/clockPresets';
 import { AI_LEVELS } from '../../config/aiLevels';
 import { useChessSettingsStore } from '../../stores/useChessSettingsStore';
 import { useChessStore } from '../../stores/useChessStore';
+import { useTranslation } from '../../../../core/i18n/useTranslation';
+import { LOCALE_LABELS, type Locale } from '../../../../core/i18n/translations';
 import type { AILevel, GameMode, PieceColor } from '../../engine/types';
+
+/** Translation key for an AI level (matches keys in `translations.ts`). */
+const AI_LEVEL_LABEL_KEYS: Record<AILevel, string> = {
+  easy: 'ai.beginner',
+  medium: 'ai.amateur',
+  hard: 'ai.master',
+  expert: 'ai.grandmaster',
+};
+
+/** Translation key for a clock preset (matches keys in `translations.ts`). */
+const CLOCK_PRESET_LABEL_KEYS: Record<string, string> = {
+  bullet: 'clock.bullet',
+  blitz: 'clock.blitz',
+  rapid: 'clock.rapid',
+  classical: 'clock.classical',
+  unlimited: 'clock.unlimited',
+};
 
 interface SettingsPanelProps {
   /** Whether the panel is open */
@@ -41,6 +60,8 @@ export function SettingsPanel({ isOpen, onClose, onResetRequired }: SettingsPane
 
   const gameMode = useChessStore((s) => s.gameMode);
   const setGameMode = useChessStore((s) => s.setGameMode);
+
+  const { t, locale, setLocale } = useTranslation();
 
   const handleModeChange = (mode: GameMode) => {
     setGameMode(mode);
@@ -83,11 +104,11 @@ export function SettingsPanel({ isOpen, onClose, onResetRequired }: SettingsPane
             <div className="p-6">
               {/* Header */}
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-base font-semibold text-text-primary">Settings</h2>
+                <h2 className="text-base font-semibold text-text-primary">{t('settings.title')}</h2>
                 <button
                   onClick={onClose}
                   className="text-text-muted hover:text-text-primary transition-colors p-1"
-                  aria-label="Close settings"
+                  aria-label={t('settings.close')}
                 >
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                     <path
@@ -100,8 +121,28 @@ export function SettingsPanel({ isOpen, onClose, onResetRequired }: SettingsPane
                 </button>
               </div>
 
+              {/* Language */}
+              <Section title={t('settings.language')}>
+                <div className="grid grid-cols-2 gap-2">
+                  {(Object.keys(LOCALE_LABELS) as Locale[]).map((lang) => (
+                    <button
+                      key={lang}
+                      onClick={() => setLocale(lang)}
+                      className={`px-3 py-2.5 text-[12px] font-medium rounded-lg border transition-all
+                        ${
+                          locale === lang
+                            ? 'bg-accent/15 border-accent text-accent'
+                            : 'bg-bg-hover/50 border-border-subtle text-text-secondary hover:border-border-primary'
+                        }`}
+                    >
+                      {LOCALE_LABELS[lang]}
+                    </button>
+                  ))}
+                </div>
+              </Section>
+
               {/* Game Mode */}
-              <Section title="Game Mode">
+              <Section title={t('settings.gameMode')}>
                 <div className="grid grid-cols-2 gap-2">
                   {(['ai', 'local'] as const).map((mode) => (
                     <button
@@ -114,14 +155,14 @@ export function SettingsPanel({ isOpen, onClose, onResetRequired }: SettingsPane
                             : 'bg-bg-hover/50 border-border-subtle text-text-secondary hover:border-border-primary'
                         }`}
                     >
-                      {mode === 'ai' ? 'vs AI' : '2 Players'}
+                      {mode === 'ai' ? t('settings.vsAI') : t('settings.twoPlayers')}
                     </button>
                   ))}
                 </div>
               </Section>
 
               {/* Playing as (color selection) */}
-              <Section title="Playing as">
+              <Section title={t('settings.playingAs')}>
                 <div className="grid grid-cols-2 gap-2">
                   {(['w', 'b'] as const).map((color) => (
                     <button
@@ -142,20 +183,20 @@ export function SettingsPanel({ isOpen, onClose, onResetRequired }: SettingsPane
                             : 'bg-black-piece border-white/10'
                         }`}
                       />
-                      {color === 'w' ? 'White' : 'Black'}
+                      {color === 'w' ? t('chess.white') : t('chess.black')}
                     </button>
                   ))}
                 </div>
                 <p className="text-[10px] text-text-muted mt-2 leading-relaxed">
                   {playerColor === 'w'
-                    ? 'White moves first — you start the game.'
-                    : 'White moves first — the AI starts.'}
+                    ? t('settings.whiteFirstHuman')
+                    : t('settings.whiteFirstAI')}
                 </p>
               </Section>
 
               {/* AI Difficulty (only in AI mode) */}
               {gameMode === 'ai' && (
-                <Section title="AI Difficulty">
+                <Section title={t('settings.aiDifficulty')}>
                   <div className="space-y-1.5">
                     {(Object.keys(AI_LEVELS) as AILevel[]).map((lvl) => (
                       <button
@@ -174,10 +215,10 @@ export function SettingsPanel({ isOpen, onClose, onResetRequired }: SettingsPane
                             aiLevel === lvl ? 'text-accent' : 'text-text-secondary'
                           }`}
                         >
-                          {AI_LEVELS[lvl].label}
+                          {t(AI_LEVEL_LABEL_KEYS[lvl])}
                         </span>
                         <span className="text-[10px] text-text-muted font-mono">
-                          depth {AI_LEVELS[lvl].depth}
+                          {t('settings.depth')} {AI_LEVELS[lvl].depth}
                         </span>
                       </button>
                     ))}
@@ -186,9 +227,9 @@ export function SettingsPanel({ isOpen, onClose, onResetRequired }: SettingsPane
               )}
 
               {/* Clock Preset */}
-              <Section title="Time Control">
+              <Section title={t('settings.timeControl')}>
                 <div className="space-y-1.5">
-                  {Object.entries(CLOCK_PRESETS).map(([key, preset]) => (
+                  {Object.entries(CLOCK_PRESETS).map(([key]) => (
                     <button
                       key={key}
                       onClick={() => handleClockChange(key)}
@@ -205,7 +246,7 @@ export function SettingsPanel({ isOpen, onClose, onResetRequired }: SettingsPane
                           clockPreset === key ? 'text-accent' : 'text-text-secondary'
                         }`}
                       >
-                        {preset.label}
+                        {t(CLOCK_PRESET_LABEL_KEYS[key] ?? key)}
                       </span>
                     </button>
                   ))}
@@ -213,14 +254,14 @@ export function SettingsPanel({ isOpen, onClose, onResetRequired }: SettingsPane
               </Section>
 
               {/* Toggles */}
-              <Section title="Preferences">
+              <Section title={t('settings.preferences')}>
                 <ToggleRow
-                  label="Sound effects"
+                  label={t('settings.soundEffects')}
                   value={soundEnabled}
                   onChange={setSoundEnabled}
                 />
                 <ToggleRow
-                  label="Auto-rotate board"
+                  label={t('settings.autoRotate')}
                   value={autoRotate}
                   onChange={setAutoRotate}
                 />
