@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "Read(//Users/grafsoul/.nvm/versions/node/**)",
+      "Read(//usr/local/lib/node_modules/npm/bin/**)",
+      "Bash(echo $PATH)",
+      "Bash(export PATH=\"/usr/local/bin:/opt/homebrew/bin:$PATH\")",
+      "Bash(npm --version)",
+      "Bash(export PATH=\"/Users/grafsoul/.nvm/versions/node/v24.11.1/bin:$PATH\")",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}

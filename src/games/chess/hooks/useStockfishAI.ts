@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useChessStore } from '../stores/useChessStore';
 import { useChessSettingsStore } from '../stores/useChessSettingsStore';
+import { useCameraRotationStore } from '../stores/useCameraRotationStore';
 import { StockfishService } from '../ai/StockfishService';
 import { AI_LEVELS } from '../config/aiLevels';
 
@@ -85,12 +86,16 @@ export function useStockfishAI() {
     if (pendingPromotion) return;
 
     let cancelled = false;
+    let pauseTimer: number | null = null;
+    let initialDeferTimer: number | null = null;
+    let unsubscribeRotation: (() => void) | null = null;
     setAIThinking(true);
 
-    // Small delay so the player's piece animation visibly completes first
-    const delayMs = 250;
+    /** Pause (ms) AFTER camera rotation finishes, before AI plays its move. */
+    const POST_ROTATION_PAUSE_MS = 300;
 
-    const timer = window.setTimeout(() => {
+    /** Compute and play the AI move. */
+    const playMove = () => {
       if (cancelled) return;
       service
         .getBestMove(fen)
@@ -108,11 +113,41 @@ export function useStockfishAI() {
         .finally(() => {
           if (!cancelled) setAIThinking(false);
         });
-    }, delayMs);
+    };
+
+    /** Wait one extra pause then play. */
+    const scheduleMoveAfterPause = () => {
+      pauseTimer = window.setTimeout(() => {
+        pauseTimer = null;
+        playMove();
+      }, POST_ROTATION_PAUSE_MS);
+    };
+
+    // CameraRig lives in a separate React root (the R3F Canvas), so its effects
+    // may commit AFTER ours. Defer the rotation check by one frame so the rig
+    // has a chance to flip `isRotating` to true if a forced rotation is queued.
+    initialDeferTimer = window.setTimeout(() => {
+      initialDeferTimer = null;
+      if (cancelled) return;
+
+      if (useCameraRotationStore.getState().isRotating) {
+        unsubscribeRotation = useCameraRotationStore.subscribe((state) => {
+          if (!state.isRotating && !cancelled) {
+            unsubscribeRotation?.();
+            unsubscribeRotation = null;
+            scheduleMoveAfterPause();
+          }
+        });
+      } else {
+        scheduleMoveAfterPause();
+      }
+    }, 32);
 
     return () => {
       cancelled = true;
-      window.clearTimeout(timer);
+      if (initialDeferTimer !== null) window.clearTimeout(initialDeferTimer);
+      if (pauseTimer !== null) window.clearTimeout(pauseTimer);
+      unsubscribeRotation?.();
       service.stop();
       setAIThinking(false);
     };
