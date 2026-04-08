@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useChessGame } from '../games/chess/hooks/useChessGame';
 import { ChessScene } from '../games/chess/components/scene/ChessScene';
 import { SceneCanvas } from '../core/components/canvas/SceneCanvas';
 import { CameraRig } from '../core/components/canvas/CameraRig';
 import { PlayerCard } from '../games/chess/components/ui/PlayerCard';
 import { SettingsPanel } from '../games/chess/components/ui/SettingsPanel';
+import { GameOverDialog } from '../games/chess/components/ui/GameOverDialog';
 import { useChessSettingsStore } from '../games/chess/stores/useChessSettingsStore';
+import { useChessStatsStore } from '../games/chess/stores/useChessStatsStore';
 import { useTranslation } from '../core/i18n/useTranslation';
 import type { GameMode, PieceColor } from '../games/chess/engine/types';
 
@@ -30,8 +32,23 @@ export function ChessPage() {
   } = useChessGame();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [gameOverDismissed, setGameOverDismissed] = useState(false);
   const playerColor = useChessSettingsStore((s) => s.playerColor);
   const { t } = useTranslation();
+
+  // The most recent record holds duration/moves for the just-finished game.
+  const lastRecord = useChessStatsStore((s) => s.gameHistory[0]);
+  const isFinished =
+    gameStatus === 'checkmate' ||
+    gameStatus === 'stalemate' ||
+    gameStatus === 'draw' ||
+    gameStatus === 'resigned' ||
+    gameStatus === 'timeout';
+
+  // Reset the dismissed flag whenever a new game starts
+  useEffect(() => {
+    if (!isFinished) setGameOverDismissed(false);
+  }, [isFinished]);
 
   const statusText = getStatusText(gameStatus, winner, isCheck, turn, isAIThinking, gameMode, t);
   const isPlaying = gameStatus === 'playing' || gameStatus === 'idle';
@@ -167,6 +184,22 @@ export function ChessPage() {
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         onResetRequired={resetGame}
+      />
+
+      {/* End-of-game overlay */}
+      <GameOverDialog
+        isOpen={isFinished && !gameOverDismissed}
+        status={gameStatus}
+        winner={winner}
+        playerColor={playerColor}
+        gameMode={gameMode}
+        moveCount={lastRecord?.moveCount ?? moveHistory.length}
+        durationMs={lastRecord?.durationMs ?? 0}
+        onPlayAgain={() => {
+          setGameOverDismissed(true);
+          resetGame();
+        }}
+        onClose={() => setGameOverDismissed(true)}
       />
 
       {/* Promotion dialog */}

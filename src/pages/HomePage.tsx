@@ -2,12 +2,13 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '../core/components/ui';
 import { ROUTES } from '../core/types/common';
+import { useTranslation } from '../core/i18n/useTranslation';
 
 const games = [
   {
     id: 'chess',
-    title: '3D Chess',
-    description: 'Play against AI or a friend in an immersive 3D environment',
+    titleKey: 'home.chess.title',
+    descriptionKey: 'home.chess.description',
     icon: (
       <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M8 16l-1.447.724a1 1 0 0 0-.553.894V20h12v-2.382a1 1 0 0 0-.553-.894L16 16" />
@@ -22,8 +23,8 @@ const games = [
   },
   {
     id: 'checkers',
-    title: 'Checkers',
-    description: 'Classic checkers game with multiple board styles',
+    titleKey: 'home.checkers.title',
+    descriptionKey: 'home.checkers.description',
     icon: (
       <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="8" />
@@ -35,8 +36,8 @@ const games = [
   },
   {
     id: 'go',
-    title: 'Go',
-    description: 'Ancient strategy game on a 19x19 board',
+    titleKey: 'home.go.title',
+    descriptionKey: 'home.go.description',
     icon: (
       <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
@@ -51,6 +52,7 @@ const games = [
 /** Game portal landing page */
 export function HomePage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <div className="h-full flex flex-col items-center justify-center px-8 py-12 overflow-auto relative">
@@ -66,13 +68,13 @@ export function HomePage() {
         transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
       >
         <h1 className="text-5xl font-bold text-text-primary mb-3 tracking-tight leading-tight">
-          Board Game{' '}
+          {t('home.titleStart')}{' '}
           <span className="bg-gradient-to-r from-violet-400 to-purple-300 bg-clip-text text-transparent">
-            Portal
+            {t('home.titleAccent')}
           </span>
         </h1>
         <p className="text-text-secondary text-base max-w-sm mx-auto leading-relaxed">
-          Immersive 3D board games with AI opponents and beautiful animations
+          {t('home.subtitle')}
         </p>
       </motion.div>
 
@@ -106,22 +108,22 @@ export function HomePage() {
               <div>
                 <h2 className={`text-base font-semibold mb-1
                   ${game.available ? 'text-text-primary' : 'text-text-muted'}`}>
-                  {game.title}
+                  {t(game.titleKey)}
                 </h2>
                 <p className={`text-xs leading-relaxed
                   ${game.available ? 'text-text-secondary' : 'text-text-muted'}`}>
-                  {game.description}
+                  {t(game.descriptionKey)}
                 </p>
               </div>
 
               <div className="pt-1">
                 {game.available ? (
                   <Button variant="primary" size="sm">
-                    Play Now
+                    {t('btn.playNow')}
                   </Button>
                 ) : (
                   <span className="text-[10px] text-text-muted uppercase tracking-[0.15em] font-medium">
-                    Coming Soon
+                    {t('btn.comingSoon')}
                   </span>
                 )}
               </div>

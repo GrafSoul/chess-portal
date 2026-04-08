@@ -43,6 +43,13 @@ const en: TranslationDict = {
   'chess.moves': 'Moves',
   'chess.noCaptures': 'no captures',
   'chess.choosePromotion': 'Choose promotion',
+  'chess.gameOver': 'Game over',
+  'chess.victory': 'Victory',
+  'chess.defeat': 'Defeat',
+  'chess.drawTitle': 'Draw',
+  'chess.playAgain': 'Play again',
+  'chess.statBoxMoves': 'Moves',
+  'chess.statBoxDuration': 'Time',
 
   // Settings panel
   'settings.title': 'Settings',
@@ -94,6 +101,20 @@ const en: TranslationDict = {
   'stats.losses': 'Losses',
   'stats.draws': 'Draws',
   'stats.empty': 'Play your first game to start tracking statistics.',
+  'stats.history': 'Recent games',
+  'stats.clear': 'Clear history',
+  'stats.confirmClear': 'Clear all stored game history?',
+  'stats.modeAI': 'vs AI',
+  'stats.modeLocal': '2 Players',
+  'stats.outcomeWin': 'Win',
+  'stats.outcomeLoss': 'Loss',
+  'stats.outcomeDraw': 'Draw',
+  'stats.endCheckmate': 'checkmate',
+  'stats.endStalemate': 'stalemate',
+  'stats.endDraw': 'draw',
+  'stats.endResigned': 'resigned',
+  'stats.endTimeout': 'timeout',
+  'stats.movesLabel': 'moves',
 };
 
 /** Russian translations. */
@@ -135,6 +156,13 @@ const ru: TranslationDict = {
   'chess.moves': 'Ходы',
   'chess.noCaptures': 'нет взятий',
   'chess.choosePromotion': 'Выберите фигуру',
+  'chess.gameOver': 'Партия окончена',
+  'chess.victory': 'Победа',
+  'chess.defeat': 'Поражение',
+  'chess.drawTitle': 'Ничья',
+  'chess.playAgain': 'Сыграть снова',
+  'chess.statBoxMoves': 'Ходов',
+  'chess.statBoxDuration': 'Время',
 
   // Settings panel
   'settings.title': 'Настройки',
@@ -186,6 +214,20 @@ const ru: TranslationDict = {
   'stats.losses': 'Поражения',
   'stats.draws': 'Ничьи',
   'stats.empty': 'Сыграйте первую игру, чтобы начать отслеживать статистику.',
+  'stats.history': 'Недавние партии',
+  'stats.clear': 'Очистить историю',
+  'stats.confirmClear': 'Удалить всю историю партий?',
+  'stats.modeAI': 'против ИИ',
+  'stats.modeLocal': '2 игрока',
+  'stats.outcomeWin': 'Победа',
+  'stats.outcomeLoss': 'Поражение',
+  'stats.outcomeDraw': 'Ничья',
+  'stats.endCheckmate': 'мат',
+  'stats.endStalemate': 'пат',
+  'stats.endDraw': 'ничья',
+  'stats.endResigned': 'сдался',
+  'stats.endTimeout': 'время',
+  'stats.movesLabel': 'ходов',
 };
 
 /** All translations indexed by locale. */

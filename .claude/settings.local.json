@@ -8,7 +8,10 @@
       "Bash(export PATH=\"/usr/local/bin:/opt/homebrew/bin:$PATH\")",
       "Bash(npm --version)",
       "Bash(export PATH=\"/Users/grafsoul/.nvm/versions/node/v24.11.1/bin:$PATH\")",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Read(//Users/grafsoul/.nvm/alias/**)",
+      "Bash(bash -c 'export NVM_DIR=\"$HOME/.nvm\"; [ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\"; which node; node --version')",
+      "Bash(bash -c 'export NVM_DIR=\"$HOME/.nvm\"; . \"$NVM_DIR/nvm.sh\"; nvm use default 2>&1; which node')"
     ]
   }
 }
