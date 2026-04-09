@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Chess } from 'chess.js';
 import { Piece } from './Piece';
+import { parseFenBoard } from '../../utils/fenUtils';
 import type { PieceType, PieceColor, Square } from '../../engine/types';
 
 interface PieceSetProps {
@@ -47,22 +47,23 @@ function computeTrackedPieces(
   prev: TrackedPiece[],
   startId: number,
 ): { pieces: TrackedPiece[]; nextId: number } {
-  const chess = new Chess(fen);
-  const board = chess.board();
+  // Parse FEN directly — we avoid chess.js here because it rejects positions
+  // without both kings, and tutorial demos intentionally use minimal positions
+  // (e.g. a single knight on an empty board).
+  const boardPart = fen.split(' ')[0] ?? '';
+  const grid = parseFenBoard(boardPart); // row 0 = rank 8
 
   // Build current board state
   const current: { type: PieceType; color: PieceColor; square: Square }[] = [];
   for (let row = 0; row < 8; row++) {
     for (let col = 0; col < 8; col++) {
-      const piece = board[7 - row][col];
-      if (piece) {
-        const square = (String.fromCharCode(97 + col) + (row + 1)) as Square;
-        current.push({
-          type: piece.type as PieceType,
-          color: piece.color as PieceColor,
-          square,
-        });
-      }
+      const ch = grid[row]?.[col];
+      if (!ch || ch === '.') continue;
+      const color: PieceColor = ch === ch.toUpperCase() ? 'w' : 'b';
+      const type = ch.toLowerCase() as PieceType;
+      // row 0 is rank 8 → file+rank (rank = 8 - row)
+      const square = (String.fromCharCode(97 + col) + (8 - row)) as Square;
+      current.push({ type, color, square });
     }
   }
 

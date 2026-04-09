@@ -5,23 +5,23 @@ import { MoveIndicator } from './MoveIndicator';
 import { CapturedPieces } from './CapturedPieces';
 import { ChessLighting } from './ChessLighting';
 import { ChessEnvironment } from './ChessEnvironment';
+import { TutorialOverlay } from './TutorialOverlay';
 import { useChessStore } from '../../stores/useChessStore';
+import { useDisplayedBoardState } from '../../hooks/useDisplayedBoardState';
 import type { Square } from '../../engine/types';
 
-/** Root 3D chess scene — connects store to visual components */
+/** Root 3D chess scene — connects store (or tutorial) to visual components */
 export function ChessScene() {
-  const fen = useChessStore((s) => s.fen);
+  const display = useDisplayedBoardState();
   const turn = useChessStore((s) => s.turn);
-  const selectedSquare = useChessStore((s) => s.selectedSquare);
-  const legalMoves = useChessStore((s) => s.legalMoves);
-  const lastMove = useChessStore((s) => s.lastMove);
   const isCheck = useChessStore((s) => s.isCheck);
   const capturedPieces = useChessStore((s) => s.capturedPieces);
   const selectSquare = useChessStore((s) => s.selectSquare);
   const getEngine = useChessStore((s) => s.getEngine);
 
-  // Find king square if in check
+  // Find king square if in check (only meaningful when not in tutorial)
   const checkSquare = useMemo((): Square | null => {
+    if (display.tutorialActive) return null;
     if (!isCheck) return null;
     const engine = getEngine();
     const board = engine.getBoard();
@@ -29,12 +29,15 @@ export function ChessScene() {
       for (let col = 0; col < 8; col++) {
         const piece = board[row][col];
         if (piece && piece.type === 'k' && piece.color === turn) {
-          return String.fromCharCode(97 + col) + (8 - row) as Square;
+          return (String.fromCharCode(97 + col) + (8 - row)) as Square;
         }
       }
     }
     return null;
-  }, [isCheck, turn, getEngine, fen]);
+  }, [isCheck, turn, getEngine, display.tutorialActive]);
+
+  // No-op click handler while in tutorial mode — board is non-interactive
+  const handleSquareClick = display.interactive ? selectSquare : () => {};
 
   return (
     <>
@@ -42,22 +45,25 @@ export function ChessScene() {
       <ChessLighting />
 
       <Board
-        selectedSquare={selectedSquare}
-        legalMoves={legalMoves}
-        lastMove={lastMove}
+        selectedSquare={display.selectedSquare}
+        legalMoves={display.legalMoves}
+        lastMove={display.lastMove}
         checkSquare={checkSquare}
-        onSquareClick={selectSquare}
+        onSquareClick={handleSquareClick}
       />
 
       <PieceSet
-        fen={fen}
-        onPieceClick={selectSquare}
+        fen={display.fen}
+        onPieceClick={handleSquareClick}
       />
 
-      <MoveIndicator squares={legalMoves} />
+      <MoveIndicator squares={display.legalMoves} />
 
-      {/* Physics zone for captured pieces */}
-      {capturedPieces.length > 0 && (
+      {/* Tutorial overlays — highlights & arrows (no-op when inactive) */}
+      <TutorialOverlay />
+
+      {/* Physics zone for captured pieces — hidden in tutorial mode */}
+      {!display.tutorialActive && capturedPieces.length > 0 && (
         <Suspense fallback={null}>
           <CapturedPieces pieces={capturedPieces} />
         </Suspense>

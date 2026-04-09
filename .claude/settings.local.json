@@ -11,7 +11,11 @@
       "Bash(npx tsc:*)",
       "Read(//Users/grafsoul/.nvm/alias/**)",
       "Bash(bash -c 'export NVM_DIR=\"$HOME/.nvm\"; [ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\"; which node; node --version')",
-      "Bash(bash -c 'export NVM_DIR=\"$HOME/.nvm\"; . \"$NVM_DIR/nvm.sh\"; nvm use default 2>&1; which node')"
+      "Bash(bash -c 'export NVM_DIR=\"$HOME/.nvm\"; . \"$NVM_DIR/nvm.sh\"; nvm use default 2>&1; which node')",
+      "Bash(npm run:*)",
+      "Bash(command -v fnm volta)",
+      "Bash(export PATH=\"$HOME/.nvm/versions/node/v24.11.1/bin:$PATH\")",
+      "Bash(git stash:*)"
     ]
   }
 }

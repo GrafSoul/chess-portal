@@ -5,6 +5,7 @@ import { SceneCanvas } from '../core/components/canvas/SceneCanvas';
 import { CameraRig } from '../core/components/canvas/CameraRig';
 import { PlayerCard } from '../games/chess/components/ui/PlayerCard';
 import { SettingsPanel } from '../games/chess/components/ui/SettingsPanel';
+import { RulesPanel } from '../games/chess/components/ui/RulesPanel';
 import { GameOverDialog } from '../games/chess/components/ui/GameOverDialog';
 import { useChessSettingsStore } from '../games/chess/stores/useChessSettingsStore';
 import { useChessStatsStore } from '../games/chess/stores/useChessStatsStore';
@@ -32,6 +33,7 @@ export function ChessPage() {
   } = useChessGame();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
   const [gameOverDismissed, setGameOverDismissed] = useState(false);
   const playerColor = useChessSettingsStore((s) => s.playerColor);
   const { t } = useTranslation();
@@ -114,6 +116,27 @@ export function ChessPage() {
               {t('btn.newGame')}
             </button>
             <button
+              onClick={() => setRulesOpen(true)}
+              className="bg-bg-primary/70 backdrop-blur-lg border border-border-subtle rounded-lg
+                p-2 text-text-secondary hover:text-text-primary hover:bg-bg-hover/70 transition-colors"
+              aria-label={t('rules.open')}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path
+                  d="M2.5 2.5h5a2 2 0 012 2v9a1.5 1.5 0 00-1.5-1.5h-5.5v-9.5z"
+                  stroke="currentColor"
+                  strokeWidth="1.3"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M13.5 2.5h-5a2 2 0 00-2 2v9a1.5 1.5 0 011.5-1.5h5.5v-9.5z"
+                  stroke="currentColor"
+                  strokeWidth="1.3"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            <button
               onClick={() => setSettingsOpen(true)}
               className="bg-bg-primary/70 backdrop-blur-lg border border-border-subtle rounded-lg
                 p-2 text-text-secondary hover:text-text-primary hover:bg-bg-hover/70 transition-colors"
@@ -185,6 +208,9 @@ export function ChessPage() {
         onClose={() => setSettingsOpen(false)}
         onResetRequired={resetGame}
       />
+
+      {/* Rules / Tutorial panel */}
+      <RulesPanel isOpen={rulesOpen} onClose={() => setRulesOpen(false)} />
 
       {/* End-of-game overlay */}
       <GameOverDialog

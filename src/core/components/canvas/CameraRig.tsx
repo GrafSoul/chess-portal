@@ -5,6 +5,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { useChessStore } from '../../../games/chess/stores/useChessStore';
 import { useChessSettingsStore } from '../../../games/chess/stores/useChessSettingsStore';
 import { useCameraRotationStore } from '../../../games/chess/stores/useCameraRotationStore';
+import { useTutorialStore } from '../../../games/chess/stores/useTutorialStore';
 import type { PieceColor } from '../../../games/chess/engine/types';
 
 /** Lerp factor per frame for smooth azimuth interpolation. */
@@ -58,8 +59,15 @@ export function CameraRig() {
   const playerColor = useChessSettingsStore((s) => s.playerColor);
   const autoRotate = useChessSettingsStore((s) => s.autoRotate);
   const turn = useChessStore((s) => s.turn);
+  const tutorialActive = useTutorialStore((s) => s.isActive);
 
-  const desiredSide: PieceColor = autoRotate ? turn : playerColor;
+  // In tutorial mode, force a fixed white-side view and ignore autoRotate so
+  // demonstrations are always shown from a stable, predictable angle.
+  const desiredSide: PieceColor = tutorialActive
+    ? 'w'
+    : autoRotate
+      ? turn
+      : playerColor;
 
   // Set new target whenever desired side changes
   useEffect(() => {

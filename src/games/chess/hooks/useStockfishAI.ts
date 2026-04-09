@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useChessStore } from '../stores/useChessStore';
 import { useChessSettingsStore } from '../stores/useChessSettingsStore';
 import { useCameraRotationStore } from '../stores/useCameraRotationStore';
+import { useTutorialStore } from '../stores/useTutorialStore';
 import { StockfishService } from '../ai/StockfishService';
 import { AI_LEVELS } from '../config/aiLevels';
 
@@ -33,6 +34,8 @@ export function useStockfishAI() {
   const aiLevel = useChessSettingsStore((s) => s.aiLevel);
   const playerColor = useChessSettingsStore((s) => s.playerColor);
   const aiColor = playerColor === 'w' ? 'b' : 'w';
+
+  const tutorialActive = useTutorialStore((s) => s.isActive);
 
   // Initialize Stockfish once
   useEffect(() => {
@@ -80,6 +83,9 @@ export function useStockfishAI() {
   useEffect(() => {
     const service = serviceRef.current;
     if (!service || !initializedRef.current) return;
+    // Suspend AI entirely while the tutorial panel is open — the board is
+    // showing demo positions, not the live game state.
+    if (tutorialActive) return;
     if (gameMode !== 'ai') return;
     if (turn !== aiColor) return;
     if (gameStatus !== 'idle' && gameStatus !== 'playing') return;
@@ -151,5 +157,5 @@ export function useStockfishAI() {
       service.stop();
       setAIThinking(false);
     };
-  }, [fen, turn, gameMode, gameStatus, pendingPromotion, aiColor, setAIThinking, makeMove]);
+  }, [fen, turn, gameMode, gameStatus, pendingPromotion, aiColor, tutorialActive, setAIThinking, makeMove]);
 }
