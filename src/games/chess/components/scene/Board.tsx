@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { BoardSquare } from './BoardSquare';
+import { BoardLabels } from './BoardLabels';
 import type { Square } from '../../engine/types';
 
 interface BoardProps {
@@ -57,6 +58,9 @@ export function Board({
           onClick={onSquareClick}
         />
       ))}
+
+      {/* Coordinate labels (a–h, 1–8) on the frame */}
+      <BoardLabels />
 
       {/* Ground plane */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
