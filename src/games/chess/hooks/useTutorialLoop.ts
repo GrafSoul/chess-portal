@@ -47,7 +47,10 @@ export function useTutorialLoop(chapterId: string | null) {
 
         for (const step of loop.moves) {
           if (token.cancelled) return;
-          await playMove(step.from, step.to);
+          await playMove(step.from, step.to, {
+            promote: step.promote,
+            with: step.with,
+          });
           if (token.cancelled) return;
           if (step.pauseAfterMs && step.pauseAfterMs > 0) {
             await sleep(step.pauseAfterMs);

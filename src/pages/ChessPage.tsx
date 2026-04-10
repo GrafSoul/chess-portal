@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useChessGame } from '../games/chess/hooks/useChessGame';
 import { ChessScene } from '../games/chess/components/scene/ChessScene';
 import { SceneCanvas } from '../core/components/canvas/SceneCanvas';
@@ -47,10 +47,14 @@ export function ChessPage() {
     gameStatus === 'resigned' ||
     gameStatus === 'timeout';
 
-  // Reset the dismissed flag whenever a new game starts
-  useEffect(() => {
-    if (!isFinished) setGameOverDismissed(false);
-  }, [isFinished]);
+  // Starting a new game also clears the "dismissed" flag so the end-of-game
+  // dialog can fire again next time. Wrapping `resetGame` keeps this reset
+  // co-located with the action that causes it, instead of reacting to state
+  // changes via an effect (which would be a cascading-render anti-pattern).
+  const handleNewGame = useCallback(() => {
+    setGameOverDismissed(false);
+    resetGame();
+  }, [resetGame]);
 
   const statusText = getStatusText(gameStatus, winner, isCheck, turn, isAIThinking, gameMode, t);
   const isPlaying = gameStatus === 'playing' || gameStatus === 'idle';
@@ -108,7 +112,7 @@ export function ChessPage() {
               {t('btn.undo')}
             </button>
             <button
-              onClick={resetGame}
+              onClick={handleNewGame}
               className="bg-bg-primary/70 backdrop-blur-lg border border-border-subtle rounded-lg
                 px-3 py-2 text-[12px] text-text-secondary hover:text-text-primary
                 hover:bg-bg-hover/70 transition-colors"
@@ -206,7 +210,7 @@ export function ChessPage() {
       <SettingsPanel
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
-        onResetRequired={resetGame}
+        onResetRequired={handleNewGame}
       />
 
       {/* Rules / Tutorial panel */}
@@ -221,10 +225,7 @@ export function ChessPage() {
         gameMode={gameMode}
         moveCount={lastRecord?.moveCount ?? moveHistory.length}
         durationMs={lastRecord?.durationMs ?? 0}
-        onPlayAgain={() => {
-          setGameOverDismissed(true);
-          resetGame();
-        }}
+        onPlayAgain={handleNewGame}
         onClose={() => setGameOverDismissed(true)}
       />
 

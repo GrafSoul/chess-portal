@@ -100,6 +100,34 @@ export function applyMoveToFen(fen: string, from: Square, to: Square): string {
 }
 
 /**
+ * Replace the piece on a single square with a given piece character (e.g.
+ * used to implement pawn promotion — after the pawn has arrived on rank 8,
+ * its square is rewritten to hold a queen of the same color). Side-to-move
+ * and other FEN fields are preserved.
+ *
+ * If `pieceChar` is `.`, the square is cleared. If the source square is
+ * out-of-bounds or the FEN is malformed, the original FEN is returned.
+ *
+ * @param fen Source FEN string
+ * @param square Target square (e.g. 'e8')
+ * @param pieceChar Single-character piece identifier ('Q', 'n', '.', etc.)
+ * @returns New FEN string with the square rewritten
+ */
+export function setPieceAtSquare(
+  fen: string,
+  square: Square,
+  pieceChar: string,
+): string {
+  const parts = fen.split(' ');
+  if (parts.length < 2) return fen;
+  const board = parseFenBoard(parts[0]);
+  const [r, c] = squareToRowCol(square);
+  if (!board[r]) return fen;
+  board[r][c] = pieceChar.length > 0 ? pieceChar[0] : '.';
+  return [serializeFenBoard(board), ...parts.slice(1)].join(' ');
+}
+
+/**
  * Reset the active color in a FEN to white-to-move (used when restarting a
  * demo loop so pawns move in the expected direction).
  */

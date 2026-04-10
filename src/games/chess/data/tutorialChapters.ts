@@ -11,6 +11,16 @@ export interface TutorialMoveStep {
   to: Square;
   /** Optional delay AFTER the move completes, before the next step. */
   pauseAfterMs?: number;
+  /**
+   * Promotion target — when set, the arriving piece is replaced with this
+   * type on its landing square (used by the promotion demo).
+   */
+  promote?: 'q' | 'r' | 'b' | 'n';
+  /**
+   * Paired move played simultaneously with the primary — used for castling
+   * where the king is primary and the rook is `with`.
+   */
+  with?: { from: Square; to: Square };
 }
 
 /** Config for a looped piece-movement demonstration inside a chapter. */
@@ -151,10 +161,9 @@ export const TUTORIAL_CHAPTERS: TutorialChapter[] = [
     ],
     loop: makeLoop('8/8/8/8/4B3/8/8/8 w - - 0 1', [
       { from: 'e4', to: 'h7', pauseAfterMs: 400 },
-      { from: 'h7', to: 'b1', pauseAfterMs: 400 },
-      { from: 'b1', to: 'a2', pauseAfterMs: 400 },
-      { from: 'a2', to: 'e6', pauseAfterMs: 400 },
-      { from: 'e6', to: 'e4', pauseAfterMs: 0 }, // illegal diag, fallback: won't play. Reset handled by loop
+      { from: 'h7', to: 'd3', pauseAfterMs: 400 },
+      { from: 'd3', to: 'a6', pauseAfterMs: 400 },
+      { from: 'a6', to: 'e2', pauseAfterMs: 400 },
     ]),
   },
 
@@ -170,8 +179,8 @@ export const TUTORIAL_CHAPTERS: TutorialChapter[] = [
       { from: 'f6', to: 'g4', pauseAfterMs: 400 },
       { from: 'g4', to: 'e3', pauseAfterMs: 400 },
       { from: 'e3', to: 'c4', pauseAfterMs: 400 },
-      { from: 'c4', to: 'e5', pauseAfterMs: 400 },
-      { from: 'e5', to: 'e4', pauseAfterMs: 0 }, // illegal: ignored, reset
+      { from: 'c4', to: 'd6', pauseAfterMs: 400 },
+      { from: 'd6', to: 'f5', pauseAfterMs: 400 },
     ]),
   },
 
@@ -187,37 +196,70 @@ export const TUTORIAL_CHAPTERS: TutorialChapter[] = [
     ]),
   },
 
-  // 8. Castling
+  // 8. Castling — kingside then queenside, alternating
   {
     id: 'castling',
     titleKey: 'rules.ch.castling.title',
     bodyKey: 'rules.ch.castling.body',
     fen: 'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1',
     highlights: ['g1', 'c1', 'g8', 'c8'],
-    loop: makeLoop('r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1', [
-      { from: 'e1', to: 'g1', pauseAfterMs: 600 }, // short castle (engine handles rook)
-    ]),
+    loop: {
+      fen: 'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1',
+      moves: [
+        // Short castle: king e1→g1, rook h1→f1 simultaneously
+        {
+          from: 'e1',
+          to: 'g1',
+          with: { from: 'h1', to: 'f1' },
+          pauseAfterMs: 1600,
+        },
+      ],
+      intervalMs: 1200,
+    },
   },
 
-  // 9. En passant & promotion
+  // 9. Promotion — pawn marches to the 8th rank and becomes a queen
   {
     id: 'special',
     titleKey: 'rules.ch.special.title',
     bodyKey: 'rules.ch.special.body',
     fen: '8/4P3/8/8/8/8/8/8 w - - 0 1',
     highlights: ['e8'],
-    loop: makeLoop('8/4P3/8/8/8/8/8/8 w - - 0 1', [
-      { from: 'e7', to: 'e8', pauseAfterMs: 800 },
-    ]),
+    loop: {
+      fen: '8/4P3/8/8/8/8/8/8 w - - 0 1',
+      moves: [
+        // Pawn reaches e8 and promotes to a queen
+        { from: 'e7', to: 'e8', promote: 'q', pauseAfterMs: 1200 },
+      ],
+      intervalMs: 1200,
+    },
   },
 
-  // 10. Check, checkmate, stalemate
+  // 10. Check, checkmate, stalemate — demonstrates mate in 1
   {
     id: 'check',
     titleKey: 'rules.ch.check.title',
     bodyKey: 'rules.ch.check.body',
-    fen: '4k3/4Q3/4K3/8/8/8/8/8 b - - 0 1',
-    highlights: ['e8', 'e7'],
+    // Classic king-in-the-corner mate: black king h8, white king f7 in
+    // opposition, white queen g1 delivers Qg8#.
+    //
+    // After Qg8: h8 attacked by queen (adjacent). Escape squares: h7 covered
+    // by queen (diagonal neighbor), g7 covered by white king (neighbor).
+    // Checkmate.
+    //
+    // Positioned on the right half of the board so neither piece is hidden
+    // behind the bottom-left player card in the HUD.
+    fen: '7k/5K2/8/8/8/8/8/6Q1 w - - 0 1',
+    highlights: ['g8'],
+    arrows: [{ from: 'g1', to: 'g8', color: '#ef4444' }],
+    loop: {
+      fen: '7k/5K2/8/8/8/8/8/6Q1 w - - 0 1',
+      moves: [
+        // Qg8# — king on h8 has no legal escape
+        { from: 'g1', to: 'g8', pauseAfterMs: 2200 },
+      ],
+      intervalMs: 1500,
+    },
   },
 
   // 11. Opening principles
