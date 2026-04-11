@@ -15,7 +15,8 @@
       "Bash(npm run:*)",
       "Bash(command -v fnm volta)",
       "Bash(export PATH=\"$HOME/.nvm/versions/node/v24.11.1/bin:$PATH\")",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(ls /Volumes/PROJECTS/PROJECTS/GAMES/chess-portal/public/favicon* /Volumes/PROJECTS/PROJECTS/GAMES/chess-portal/public/*.ico)"
     ]
   }
 }

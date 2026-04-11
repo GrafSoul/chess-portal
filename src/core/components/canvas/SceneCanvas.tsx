@@ -13,7 +13,7 @@ export function SceneCanvas({ children }: SceneCanvasProps) {
     <Canvas
       camera={{ position: [0, 8, 8], fov: 45, near: 0.1, far: 100 }}
       dpr={[1, 2]}
-      shadows
+      shadows={{ type: THREE.PCFShadowMap }}
       gl={{
         antialias: true,
         alpha: false,

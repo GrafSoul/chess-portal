@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import { AppShell } from '../core/components/layout/AppShell';
 import { HomePage } from '../pages/HomePage';
 import { ChessPage } from '../pages/ChessPage';
@@ -8,7 +8,7 @@ import { ROUTES } from '../core/types/common';
 /** Application router with layout */
 export function Router() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <AppShell>
         <Routes>
           <Route path={ROUTES.HOME} element={<HomePage />} />
@@ -16,6 +16,6 @@ export function Router() {
           <Route path={ROUTES.STATS} element={<StatsPage />} />
         </Routes>
       </AppShell>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
