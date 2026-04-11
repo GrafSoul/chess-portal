@@ -4,7 +4,7 @@ import type { AILevelConfig } from '../engine/types';
  * Path to the Stockfish worker script in /public.
  * Single-threaded lite build — does not require COOP/COEP cross-origin isolation.
  */
-const STOCKFISH_WORKER_URL = '/stockfish/stockfish-18-lite-single.js';
+const STOCKFISH_WORKER_URL = `${import.meta.env.BASE_URL}stockfish/stockfish-18-lite-single.js`;
 
 /** UCI bestmove response — `bestmove e2e4` or `bestmove e7e8q` */
 const BESTMOVE_REGEX = /^bestmove\s+([a-h][1-8][a-h][1-8][nbrq]?)/;
