@@ -16,7 +16,9 @@
       "Bash(command -v fnm volta)",
       "Bash(export PATH=\"$HOME/.nvm/versions/node/v24.11.1/bin:$PATH\")",
       "Bash(git stash:*)",
-      "Bash(ls /Volumes/PROJECTS/PROJECTS/GAMES/chess-portal/public/favicon* /Volumes/PROJECTS/PROJECTS/GAMES/chess-portal/public/*.ico)"
+      "Bash(ls /Volumes/PROJECTS/PROJECTS/GAMES/chess-portal/public/favicon* /Volumes/PROJECTS/PROJECTS/GAMES/chess-portal/public/*.ico)",
+      "Bash(node -e \"const ts = require\\('typescript'\\); console.log\\(ts.version\\)\")",
+      "Bash(node node_modules/.bin/tsc --noEmit)"
     ]
   }
 }

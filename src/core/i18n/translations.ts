@@ -11,7 +11,7 @@ const en: TranslationDict = {
   'nav.chess': 'Chess',
   'nav.statistics': 'Statistics',
   'nav.ready': 'Ready',
-  'nav.brand': 'Chess Portal',
+  'nav.brand': 'Game Portal',
 
   // Buttons
   'btn.undo': 'Undo',
@@ -68,6 +68,8 @@ const en: TranslationDict = {
   'settings.language': 'Language',
   'settings.close': 'Close settings',
   'settings.openSettings': 'Open settings',
+  'settings.boardAppearance': 'Board Appearance',
+  'settings.darkSquareColor': 'Dark squares color',
 
   // AI levels
   'ai.beginner': 'Beginner',
@@ -82,6 +84,20 @@ const en: TranslationDict = {
   'clock.classical': 'Classical 30+0',
   'clock.unlimited': 'Unlimited',
 
+  // Navigation — checkers
+  'nav.checkers': 'Checkers',
+
+  // Checkers game
+  'checkers.readyToPlay': 'Ready to play',
+  'checkers.whiteWins': 'White wins!',
+  'checkers.blackWins': 'Black wins!',
+  'checkers.draw': 'Draw',
+  'checkers.drawTitle': 'Draw',
+  'checkers.drawDesc': 'The game ended in a draw.',
+  'checkers.victory': 'Victory!',
+  'checkers.defeat': 'Defeat',
+  'checkers.chainActive': 'Continue capturing!',
+
   // Home page
   'home.titleStart': 'Board Game',
   'home.titleAccent': 'Portal',
@@ -89,7 +105,7 @@ const en: TranslationDict = {
   'home.chess.title': '3D Chess',
   'home.chess.description': 'Play against AI or a friend in an immersive 3D environment',
   'home.checkers.title': 'Checkers',
-  'home.checkers.description': 'Classic checkers game with multiple board styles',
+  'home.checkers.description': 'Russian draughts with AI opponent in a 3D environment',
   'home.go.title': 'Go',
   'home.go.description': 'Ancient strategy game on a 19x19 board',
 
@@ -164,6 +180,44 @@ const en: TranslationDict = {
   'rules.ch.sampleGame.title': "Sample Game: Scholar's Mate",
   'rules.ch.sampleGame.body':
     "A classic short game every beginner should know — both to play and to defend against. White targets the weak f7-square and delivers mate in just four moves: 1. e4 e5 2. Bc4 Nc6 3. Qh5 Nf6?? 4. Qxf7#. The lesson: always watch for threats against f7 (or f2)!",
+
+  // Checkers Rules / Tutorial panel
+  'checkersRules.title': 'Rules of Checkers',
+  'checkersRules.open': 'Open rules',
+  'checkersRules.close': 'Close rules',
+  'checkersRules.chapter': 'Chapter',
+  'checkersRules.next': 'Next',
+  'checkersRules.prev': 'Previous',
+  'checkersRules.ch.board.title': 'The Board & Setup',
+  'checkersRules.ch.board.body':
+    'Russian draughts is played on an 8×8 board. Only dark squares are used. Each player starts with 12 pieces (men) placed on the dark squares of their three nearest rows. White always moves first.',
+  'checkersRules.ch.man.title': 'The Man',
+  'checkersRules.ch.man.body':
+    'A man moves one square diagonally forward — to the left or to the right. Men can only move onto empty dark squares. A man cannot move backward (unless capturing).',
+  'checkersRules.ch.capture.title': 'Capturing',
+  'checkersRules.ch.capture.body':
+    'To capture, a man jumps diagonally over an adjacent opponent piece to an empty square beyond it. In Russian draughts, men can capture both forward AND backward.',
+  'checkersRules.ch.chain.title': 'Chain Captures',
+  'checkersRules.ch.chain.body':
+    'If after a capture the same piece can capture again, it MUST continue jumping. Multiple captures in a row form a chain. Captured pieces are removed from the board only after the entire chain is complete.',
+  'checkersRules.ch.forced.title': 'Forced Capture',
+  'checkersRules.ch.forced.body':
+    'If you can make a capture, you MUST capture — you cannot choose a simple move instead. The red arrow shows the mandatory capture; gray arrows show moves that are NOT allowed when a capture is available.',
+  'checkersRules.ch.promotion.title': 'Promotion to King',
+  'checkersRules.ch.promotion.body':
+    'When a man reaches the opponent\'s back rank (the farthest row), it is promoted to a king (crowned). The king is visually distinct — it has a golden crown. Promotion happens immediately upon landing.',
+  'checkersRules.ch.kingMove.title': 'King Movement',
+  'checkersRules.ch.kingMove.body':
+    'A king (crowned piece) can move any number of squares diagonally in any direction — like a bishop in chess. This makes the king a powerful piece. The highlighted squares show all possible destinations.',
+  'checkersRules.ch.kingCapture.title': 'King Capture',
+  'checkersRules.ch.kingCapture.body':
+    'A king captures by jumping over an opponent piece at any distance along a diagonal. After the jump, the king can land on any empty square beyond the captured piece. This long-range capture is unique to Russian draughts.',
+  'checkersRules.ch.winning.title': 'Winning the Game',
+  'checkersRules.ch.winning.body':
+    'You win by capturing all of your opponent\'s pieces OR by blocking them so they have no legal moves. A draw occurs if 40 moves pass without a capture (80 half-moves).',
+  'checkersRules.ch.strategy.title': 'Strategy Tips',
+  'checkersRules.ch.strategy.body':
+    'Key principles:\n\n1) Control the center — central pieces have more options.\n2) Advance your men toward promotion — kings are much stronger.\n3) Keep your back rank occupied as long as possible — it prevents easy enemy promotions.\n4) Look for chain captures — one sequence can win multiple pieces.\n5) Avoid leaving isolated pieces that can be easily captured.',
 };
 
 /** Russian translations. */
@@ -173,7 +227,7 @@ const ru: TranslationDict = {
   'nav.chess': 'Шахматы',
   'nav.statistics': 'Статистика',
   'nav.ready': 'Готово',
-  'nav.brand': 'Шахматный портал',
+  'nav.brand': 'Игровой портал',
 
   // Buttons
   'btn.undo': 'Отменить',
@@ -230,6 +284,8 @@ const ru: TranslationDict = {
   'settings.language': 'Язык',
   'settings.close': 'Закрыть настройки',
   'settings.openSettings': 'Открыть настройки',
+  'settings.boardAppearance': 'Вид доски',
+  'settings.darkSquareColor': 'Цвет тёмных клеток',
 
   // AI levels
   'ai.beginner': 'Новичок',
@@ -244,6 +300,20 @@ const ru: TranslationDict = {
   'clock.classical': 'Классика 30+0',
   'clock.unlimited': 'Без времени',
 
+  // Navigation — checkers
+  'nav.checkers': 'Шашки',
+
+  // Checkers game
+  'checkers.readyToPlay': 'Готов к игре',
+  'checkers.whiteWins': 'Победили белые!',
+  'checkers.blackWins': 'Победили чёрные!',
+  'checkers.draw': 'Ничья',
+  'checkers.drawTitle': 'Ничья',
+  'checkers.drawDesc': 'Партия завершилась вничью.',
+  'checkers.victory': 'Победа!',
+  'checkers.defeat': 'Поражение',
+  'checkers.chainActive': 'Продолжайте взятие!',
+
   // Home page
   'home.titleStart': 'Портал',
   'home.titleAccent': 'настольных игр',
@@ -251,7 +321,7 @@ const ru: TranslationDict = {
   'home.chess.title': '3D Шахматы',
   'home.chess.description': 'Играйте против ИИ или друга в захватывающей 3D обстановке',
   'home.checkers.title': 'Шашки',
-  'home.checkers.description': 'Классические шашки с разными стилями досок',
+  'home.checkers.description': 'Русские шашки с ИИ-противником в 3D-окружении',
   'home.go.title': 'Го',
   'home.go.description': 'Древняя стратегическая игра на доске 19×19',
 
@@ -326,6 +396,44 @@ const ru: TranslationDict = {
   'rules.ch.sampleGame.title': 'Пример: детский мат',
   'rules.ch.sampleGame.body':
     'Классическая короткая партия, которую должен знать каждый новичок — и чтобы сыграть, и чтобы не попасться. Белые атакуют слабое поле f7 и ставят мат в четыре хода: 1. e4 e5 2. Сc4 Кc6 3. Фh5 Кf6?? 4. Ф:f7#. Урок: всегда следите за угрозами по полю f7 (или f2)!',
+
+  // Checkers Rules / Tutorial panel
+  'checkersRules.title': 'Правила шашек',
+  'checkersRules.open': 'Открыть правила',
+  'checkersRules.close': 'Закрыть правила',
+  'checkersRules.chapter': 'Глава',
+  'checkersRules.next': 'Далее',
+  'checkersRules.prev': 'Назад',
+  'checkersRules.ch.board.title': 'Доска и расстановка',
+  'checkersRules.ch.board.body':
+    'Русские шашки играются на доске 8×8. Используются только тёмные поля. У каждого игрока по 12 шашек, расставленных на тёмных полях трёх ближайших рядов. Белые ходят первыми.',
+  'checkersRules.ch.man.title': 'Шашка',
+  'checkersRules.ch.man.body':
+    'Шашка ходит на одно поле по диагонали вперёд — влево или вправо. Шашки могут ходить только на пустые тёмные поля. Назад обычная шашка ходить не может (кроме взятия).',
+  'checkersRules.ch.capture.title': 'Взятие',
+  'checkersRules.ch.capture.body':
+    'Для взятия шашка перепрыгивает по диагонали через соседнюю фигуру противника на пустое поле за ней. В русских шашках обычные шашки могут бить и вперёд, И назад.',
+  'checkersRules.ch.chain.title': 'Цепочка взятий',
+  'checkersRules.ch.chain.body':
+    'Если после взятия та же шашка может взять ещё раз, она ОБЯЗАНА продолжить. Несколько взятий подряд образуют цепочку. Взятые шашки снимаются с доски только после завершения всей цепочки.',
+  'checkersRules.ch.forced.title': 'Обязательное взятие',
+  'checkersRules.ch.forced.body':
+    'Если есть возможность взять, вы ОБЯЗАНЫ это сделать — нельзя выбрать простой ход вместо взятия. Красная стрелка показывает обязательное взятие; серые стрелки — ходы, которые запрещены при наличии взятия.',
+  'checkersRules.ch.promotion.title': 'Превращение в дамку',
+  'checkersRules.ch.promotion.body':
+    'Когда шашка достигает последнего ряда противника, она превращается в дамку (коронуется). Дамка визуально отличается — у неё золотая корона. Превращение происходит сразу при попадании на последний ряд.',
+  'checkersRules.ch.kingMove.title': 'Ход дамки',
+  'checkersRules.ch.kingMove.body':
+    'Дамка ходит на любое количество полей по диагонали в любом направлении — как слон в шахматах. Это делает дамку очень сильной фигурой. Подсвеченные поля показывают все возможные направления.',
+  'checkersRules.ch.kingCapture.title': 'Взятие дамкой',
+  'checkersRules.ch.kingCapture.body':
+    'Дамка бьёт, перепрыгивая через фигуру противника на любом расстоянии по диагонали. После прыжка дамка может приземлиться на любое свободное поле за взятой фигурой. Это дальнобойное взятие — особенность русских шашек.',
+  'checkersRules.ch.winning.title': 'Победа',
+  'checkersRules.ch.winning.body':
+    'Вы побеждаете, если взяли все шашки противника ИЛИ заблокировали их так, что у них нет ходов. Ничья наступает, если 40 ходов прошло без взятия (80 полуходов).',
+  'checkersRules.ch.strategy.title': 'Стратегические советы',
+  'checkersRules.ch.strategy.body':
+    'Ключевые принципы:\n\n1) Контролируйте центр — центральные шашки имеют больше возможностей.\n2) Продвигайте шашки к превращению — дамки намного сильнее.\n3) Держите последний ряд занятым как можно дольше — это мешает противнику пройти в дамки.\n4) Ищите цепочки взятий — одна серия может выиграть несколько фигур.\n5) Избегайте изолированных шашек, которые легко взять.',
 };
 
 /** All translations indexed by locale. */

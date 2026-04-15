@@ -31,8 +31,8 @@ const games = [
         <circle cx="12" cy="12" r="4" />
       </svg>
     ),
-    route: ROUTES.HOME,
-    available: false,
+    route: ROUTES.CHECKERS,
+    available: true,
   },
   {
     id: 'go',

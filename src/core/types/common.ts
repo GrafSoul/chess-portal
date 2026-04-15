@@ -8,6 +8,7 @@ export type VoidCallback = () => void;
 export const ROUTES = {
   HOME: '/',
   CHESS: '/chess',
+  CHECKERS: '/checkers',
   STATS: '/stats',
 } as const;
 
