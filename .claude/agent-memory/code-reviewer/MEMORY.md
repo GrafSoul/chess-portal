@@ -1,0 +1,2 @@
+- [Go Sprint 5 patterns](project_go_sprint5_patterns.md) — gameMode split, undo-in-scoring bug, coordinate system question
+- [Go Sprint 6 scoring](project_go_sprint6_scoring.md) — scoring overlay blocks board clicks, resign not disabled during scoring

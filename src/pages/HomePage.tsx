@@ -44,8 +44,8 @@ const games = [
         <circle cx="12" cy="12" r="3" fill="currentColor" />
       </svg>
     ),
-    route: ROUTES.HOME,
-    available: false,
+    route: ROUTES.GO,
+    available: true,
   },
 ] as const;
 

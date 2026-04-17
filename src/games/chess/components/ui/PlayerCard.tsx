@@ -138,7 +138,7 @@ export function PlayerCard({
             )}
           </>
         ) : (
-          <span className="text-[10px] text-text-muted/60 italic">{t('chess.noCaptures')}</span>
+          <span className="text-[10px] text-text-muted italic">{t('chess.noCaptures')}</span>
         )}
       </div>
     </div>

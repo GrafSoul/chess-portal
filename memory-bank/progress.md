@@ -35,3 +35,27 @@
 ## [2026-04-13] — Checkers: Tutorial (Rules Panel)
 - **Status:** COMPLETED
 - **What:** 10-chapter interactive tutorial matching chess pattern. Files: tutorialChapters.ts, useCheckersTutorialStore.ts, useCheckersTutorialLoop.ts, useCheckersDisplayedBoardState.ts, CheckersTutorialOverlay.tsx, CheckersRulesPanel.tsx, fenUtils.ts, boardCoords.ts. Updated CheckersScene, CheckersPage, translations (en+ru). Build/lint/typecheck PASS.
+
+## [2026-04-17] — Go: Sprint 1 (Engine)
+- **Status:** COMPLETED
+- **What:** GoEngine, types, scoring (Chinese/Japanese), groupUtils, scoringRules config, aiLevels config. 54 unit tests.
+
+## [2026-04-17] — Go: Sprint 2 (3D MVP)
+- **Status:** COMPLETED
+- **What:** GoBoard, GoStone, GoStoneSet, GoIntersection, GoScene, GoEnvironment, GoLighting, GoCameraRig, GoPage, useGoStore, useGoGame, useGoDisplayedBoardState, boardLayout, routing, sidebar, translations.
+
+## [2026-04-17] — Go: Sprint 3 (Animation + Sounds + Scoring)
+- **Status:** COMPLETED
+- **What:** FadingGoStone capture animation, GoSoundService (WebAudio synthesis), useGoSoundEffects hook, scoring overlay with previewScore, event-tick pattern for sound triggers.
+
+## [2026-04-17] — Go: Sprint 4 (MCTS AI)
+- **Status:** COMPLETED
+- **What:** goWorker.ts (self-contained MCTS+UCT in Web Worker, 5.14kB), GoAIService.ts (Promise-based worker wrapper), useGoAI.ts (React hook), useGoSettingsStore.ts (Zustand+persist). Code review fixes: slow-path fallback in getLegalMoveKeys, eye-filling avoidance in playouts, MCTS tree GC. Build/Lint/Tests PASS.
+
+## [2026-04-17] — Go: Sprint 5 (UI/UX)
+- **Status:** COMPLETED
+- **What:** GoPlayerCard.tsx (name, color indicator, captured count, thinking label), GoSettingsPanel.tsx (Language, Mode, Color, Board Size, Scoring Rules, AI Difficulty, Sound). GoPage.tsx full rewrite: player cards, move history sidebar (Go notation A1-T19), settings panel, proper end-game modal. Added undoSingle action for scoring resume. resetGame reads from useGoSettingsStore. +17 i18n keys. Code review fixes: coordinate inversion (boardSize-y), undoSingle for scoring resume. Build/Lint/Tests PASS.
+
+## [2026-04-17] — Go: Sprint 6 (Scoring UI / Dead Stones)
+- **Status:** COMPLETED
+- **What:** Dead stone marking (toggleDeadStone toggles entire connected groups dead/alive), territory visualization (small squares on board intersections), reactive scoring (scoringBreakdown + territoryMap recomputed on each toggle). Store: deadStones, territoryMap, scoringBreakdown fields + toggleDeadStone action. GoStone: isDead prop (35% opacity + red × marker). GoBoard: territory markers. GoScene: mode-aware clicks (play vs scoring). GoPage: scoring panel repositioned to bottom-right (no longer blocks board). Code review fixes: scoring overlay pointer-events (moved from full-screen modal to side panel), resign disabled during scoring. Build/Lint/Tests 54/54 PASS.
