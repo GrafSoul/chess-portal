@@ -59,3 +59,23 @@
 ## [2026-04-17] — Go: Sprint 6 (Scoring UI / Dead Stones)
 - **Status:** COMPLETED
 - **What:** Dead stone marking (toggleDeadStone toggles entire connected groups dead/alive), territory visualization (small squares on board intersections), reactive scoring (scoringBreakdown + territoryMap recomputed on each toggle). Store: deadStones, territoryMap, scoringBreakdown fields + toggleDeadStone action. GoStone: isDead prop (35% opacity + red × marker). GoBoard: territory markers. GoScene: mode-aware clicks (play vs scoring). GoPage: scoring panel repositioned to bottom-right (no longer blocks board). Code review fixes: scoring overlay pointer-events (moved from full-screen modal to side panel), resign disabled during scoring. Build/Lint/Tests 54/54 PASS.
+
+## [2026-04-18] — Go Sprint 7: Tutorial (post-review fixes)
+- **Status:** COMPLETED
+- **What:** Applied code review + JSDoc fixes after Sprint 7 implementation
+- **Notes:**
+  - ch4 (capture): white stone was fully surrounded (0 liberties) — removed extra black stone at y=3. Fixed highlight/arrow/loop step to use correct last-liberty point (4,3).
+  - ch5 (groups): `3bb5` created 10-cell row. Fixed to `3bb4`.
+  - ch6 (ko): two stones with 0 liberties each. Replaced entire position with mathematically correct ko setup (w@5,4 in atari, ko point at 4,4, verified all adjacencies legal).
+  - boardNotation.ts: added @example to emptyBoard.
+  - GoRulesPanel.tsx: expanded JSDoc to per-prop @param style.
+  - Build ✅ Lint ✅ Tests 58/58 ✅
+
+## [2026-04-18] — Go Sprint 8 (Polish)
+- **Status:** COMPLETED
+- **What:** 6 polish tasks + quality gates. Last-move highlight confirmed present; hover stone preview added; GoPage refactored 546→222 LOC with 4 extracted subcomponents + utils; mobile responsive layout (icon buttons, collapsible history, compact cards); accessibility (useEscapeClose hook, role=dialog + aria-modal + aria-labelledby on all modals, aria-live on status); React.memo on hot 3D + UI components.
+- **Notes:**
+  - New files: GoHoverPreview.tsx, GoTopBar.tsx, GoMoveHistory.tsx, GoScoringPanel.tsx, GoEndGameDialog.tsx, utils/moveFormat.ts, hooks/useEscapeClose.ts
+  - User preference captured: stats must be per-game (not shared across chess/checkers/go) — for future Stats sprint
+  - Open tech debt: Go AI engine replacement (user flagged hand-written MCTS as inferior to Stockfish/minimax used in other games), per-game stats stores, clock implementation, persistence audit in chess/checkers
+  - Build ✅ Lint ✅ Tests 58/58 ✅

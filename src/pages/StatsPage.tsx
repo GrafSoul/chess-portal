@@ -1,22 +1,56 @@
-import { useMemo } from 'react';
+/**
+ * Statistics page — shows aggregated counts and a history list of recently
+ * finished games, separated by game type.
+ *
+ * Each game (Chess / Checkers / Go) has its own persistent stats store and
+ * the page exposes a tab selector to switch between them. Summary counts and
+ * recent-game lists are derived from the currently-selected game's store.
+ *
+ * Records from different stores have different shapes (end reasons, plus
+ * Go carries board size and margin); the page normalises each into a
+ * common display shape via per-game adapters.
+ */
+
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   useChessStatsStore,
-  selectStatsSummary,
-  type GameRecord,
-  type GameEndReason,
+  selectStatsSummary as selectChessSummary,
   type GameOutcome,
 } from '../games/chess/stores/useChessStatsStore';
+import {
+  useCheckersStatsStore,
+  selectStatsSummary as selectCheckersSummary,
+} from '../games/checkers/stores/useCheckersStatsStore';
+import {
+  useGoStatsStore,
+  selectGoStatsSummary,
+} from '../games/go/stores/useGoStatsStore';
 import { useTranslation } from '../core/i18n/useTranslation';
 
-/** Translation keys for end-of-game reasons. */
-const END_REASON_KEYS: Record<GameEndReason, string> = {
-  checkmate: 'stats.endCheckmate',
-  stalemate: 'stats.endStalemate',
-  draw: 'stats.endDraw',
-  resigned: 'stats.endResigned',
-  timeout: 'stats.endTimeout',
-};
+/** Identifier of which game's stats are shown. */
+type StatsTab = 'chess' | 'checkers' | 'go';
+
+/** Normalized record used by the shared `HistoryRow` renderer. */
+interface NormalizedRecord {
+  id: string;
+  finishedAt: number;
+  mode: 'ai' | 'local';
+  outcome: GameOutcome | null;
+  endReasonKey: string;
+  moveCount: number;
+  durationMs: number;
+  /** Optional game-specific badge (e.g. Go board size). */
+  badge?: string;
+}
+
+/** Common summary shape displayed in the top grid. */
+interface SummaryCounts {
+  played: number;
+  wins: number;
+  losses: number;
+  draws: number;
+}
 
 /** Tailwind class for an outcome label color. */
 function outcomeColor(outcome: GameOutcome | null): string {
@@ -52,17 +86,88 @@ function formatDate(ts: number, locale: string): string {
   });
 }
 
+/** i18n key for a chess end reason. */
+const CHESS_END_REASON_KEYS: Record<string, string> = {
+  checkmate: 'stats.endCheckmate',
+  stalemate: 'stats.endStalemate',
+  draw: 'stats.endDraw',
+  resigned: 'stats.endResigned',
+  timeout: 'stats.endTimeout',
+};
+
+/** i18n key for a checkers end reason. */
+const CHECKERS_END_REASON_KEYS: Record<string, string> = {
+  no_moves: 'stats.endNoMoves',
+  draw: 'stats.endDraw',
+  resigned: 'stats.endResigned',
+  timeout: 'stats.endTimeout',
+};
+
+/** i18n key for a Go end reason. */
+const GO_END_REASON_KEYS: Record<string, string> = {
+  passed: 'stats.endPassed',
+  resigned: 'stats.endResigned',
+  timeout: 'stats.endTimeout',
+};
+
 /**
- * Statistics page — shows aggregated counts and a list of recently finished
- * games. All data is read from `useChessStatsStore`, which is persisted in
- * localStorage and updated by `useChessGame` whenever a game ends.
+ * Statistics page with per-game tabs. Each tab reads its own persisted
+ * stats store and shows an independent summary + history list.
  */
 export function StatsPage() {
   const { t, locale } = useTranslation();
-  const gameHistory = useChessStatsStore((s) => s.gameHistory);
-  const clearStats = useChessStatsStore((s) => s.clearStats);
+  const [tab, setTab] = useState<StatsTab>('chess');
 
-  const summary = useMemo(() => selectStatsSummary(gameHistory), [gameHistory]);
+  // Subscribe to every game's history up-front — Zustand selectors keep each
+  // subscription cheap and this lets tab counts display without remounting.
+  const chessHistory = useChessStatsStore((s) => s.gameHistory);
+  const clearChess = useChessStatsStore((s) => s.clearStats);
+  const checkersHistory = useCheckersStatsStore((s) => s.gameHistory);
+  const clearCheckers = useCheckersStatsStore((s) => s.clearStats);
+  const goHistory = useGoStatsStore((s) => s.gameHistory);
+  const clearGo = useGoStatsStore((s) => s.clearStats);
+
+  const summary: SummaryCounts = useMemo(() => {
+    if (tab === 'chess') return selectChessSummary(chessHistory);
+    if (tab === 'checkers') return selectCheckersSummary(checkersHistory);
+    return selectGoStatsSummary(goHistory);
+  }, [tab, chessHistory, checkersHistory, goHistory]);
+
+  // Map the active tab's store into the shared display shape.
+  const records: NormalizedRecord[] = useMemo(() => {
+    if (tab === 'chess') {
+      return chessHistory.map((r) => ({
+        id: r.id,
+        finishedAt: r.finishedAt,
+        mode: r.mode,
+        outcome: r.outcome,
+        endReasonKey: CHESS_END_REASON_KEYS[r.endReason] ?? 'stats.endDraw',
+        moveCount: r.moveCount,
+        durationMs: r.durationMs,
+      }));
+    }
+    if (tab === 'checkers') {
+      return checkersHistory.map((r) => ({
+        id: r.id,
+        finishedAt: r.finishedAt,
+        mode: r.mode,
+        outcome: r.outcome,
+        endReasonKey: CHECKERS_END_REASON_KEYS[r.endReason] ?? 'stats.endDraw',
+        moveCount: r.moveCount,
+        durationMs: r.durationMs,
+      }));
+    }
+    return goHistory.map((r) => ({
+      id: r.id,
+      finishedAt: r.finishedAt,
+      mode: r.mode,
+      outcome: r.outcome,
+      endReasonKey: GO_END_REASON_KEYS[r.endReason] ?? 'stats.endDraw',
+      moveCount: r.moveCount,
+      durationMs: r.durationMs,
+      badge: `${r.boardSize}×${r.boardSize}${r.margin > 0 ? ` · +${r.margin}` : ''}`,
+    }));
+  }, [tab, chessHistory, checkersHistory, goHistory]);
 
   const stats = [
     { labelKey: 'stats.played', value: summary.played, borderColor: 'border-t-text-muted' },
@@ -72,13 +177,22 @@ export function StatsPage() {
   ];
 
   const handleClear = () => {
-    if (window.confirm(t('stats.confirmClear'))) clearStats();
+    if (!window.confirm(t('stats.confirmClear'))) return;
+    if (tab === 'chess') clearChess();
+    else if (tab === 'checkers') clearCheckers();
+    else clearGo();
   };
+
+  const tabs: { id: StatsTab; labelKey: string }[] = [
+    { id: 'chess', labelKey: 'stats.tabChess' },
+    { id: 'checkers', labelKey: 'stats.tabCheckers' },
+    { id: 'go', labelKey: 'stats.tabGo' },
+  ];
 
   return (
     <div className="h-full flex flex-col items-center px-8 py-12 overflow-auto">
       <motion.div
-        className="text-center mb-10"
+        className="text-center mb-8"
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
@@ -96,16 +210,40 @@ export function StatsPage() {
         <p className="text-sm text-text-secondary">{t('stats.subtitle')}</p>
       </motion.div>
 
+      {/* Tab selector */}
+      <div
+        role="tablist"
+        className="w-full max-w-md mb-6 grid grid-cols-3 gap-1 p-1 bg-bg-card border border-border-primary rounded-lg"
+      >
+        {tabs.map((tabItem) => {
+          const active = tab === tabItem.id;
+          return (
+            <button
+              key={tabItem.id}
+              role="tab"
+              aria-selected={active}
+              onClick={() => setTab(tabItem.id)}
+              className={`text-xs font-semibold uppercase tracking-[0.1em] py-2 rounded-md transition-colors
+                ${active
+                  ? 'bg-accent text-bg-primary'
+                  : 'text-text-muted hover:text-text-primary'}`}
+            >
+              {t(tabItem.labelKey)}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Stats grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full max-w-md mb-8">
         {stats.map((stat, i) => (
           <motion.div
-            key={stat.labelKey}
+            key={`${tab}-${stat.labelKey}`}
             className={`bg-bg-card border border-border-primary ${stat.borderColor} border-t-2
               rounded-lg p-4 text-center`}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.08 + i * 0.06, duration: 0.35 }}
+            transition={{ delay: 0.04 + i * 0.04, duration: 0.3 }}
           >
             <div className={`text-2xl font-bold mb-0.5 ${stat.valueColor ?? 'text-text-primary'}`}>
               {stat.value}
@@ -117,21 +255,22 @@ export function StatsPage() {
         ))}
       </div>
 
-      {gameHistory.length === 0 ? (
+      {records.length === 0 ? (
         <motion.p
           className="text-xs text-text-muted text-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.2 }}
         >
           {t('stats.empty')}
         </motion.p>
       ) : (
         <motion.div
+          key={tab}
           className="w-full max-w-md"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35, duration: 0.35 }}
+          transition={{ duration: 0.3 }}
         >
           <div className="flex items-center justify-between mb-2.5">
             <h2 className="text-[10px] text-text-muted uppercase tracking-[0.12em] font-medium">
@@ -146,7 +285,7 @@ export function StatsPage() {
           </div>
 
           <ul className="flex flex-col gap-1.5">
-            {gameHistory.slice(0, 30).map((rec) => (
+            {records.slice(0, 30).map((rec) => (
               <HistoryRow key={rec.id} record={rec} locale={locale} t={t} />
             ))}
           </ul>
@@ -156,9 +295,13 @@ export function StatsPage() {
   );
 }
 
+/** Props for {@link HistoryRow}. */
 interface HistoryRowProps {
-  record: GameRecord;
+  /** Normalized display record. */
+  record: NormalizedRecord;
+  /** Current UI locale (for date formatting). */
   locale: string;
+  /** Translation function. */
   t: (key: string) => string;
 }
 
@@ -184,7 +327,8 @@ function HistoryRow({ record, locale, t }: HistoryRowProps) {
         </span>
         <div className="flex flex-col min-w-0">
           <span className="text-[11px] text-text-secondary truncate">
-            {t(modeKey)} · {t(END_REASON_KEYS[record.endReason])}
+            {t(modeKey)} · {t(record.endReasonKey)}
+            {record.badge ? ` · ${record.badge}` : ''}
           </span>
           <span className="text-[10px] text-text-muted">
             {record.moveCount} {t('stats.movesLabel')} · {formatDuration(record.durationMs)}

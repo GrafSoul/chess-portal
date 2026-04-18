@@ -143,6 +143,43 @@ const en: TranslationDict = {
   'go.japanese': 'Japanese',
   'go.playouts': 'playouts',
 
+  // Go tutorial / rules panel
+  'goRules.title': 'Go Rules',
+  'goRules.close': 'Close rules',
+  'goRules.chapter': 'Chapter',
+  'goRules.prev': 'Previous',
+  'goRules.next': 'Next',
+  'goRules.ch.board.title': 'The Board',
+  'goRules.ch.board.body':
+    'Go is played on a grid of lines. Stones are placed on the intersections — the points where lines cross — not inside the squares.\n\nThe standard board is 19x19, but beginners often start on 9x9. The marked dots (star points) are reference points.\n\nBlack always plays first.',
+  'goRules.ch.placing.title': 'Placing Stones',
+  'goRules.ch.placing.body':
+    'Players take turns placing one stone of their color on any empty intersection.\n\nOnce placed, stones never move — they stay on the board until captured.\n\nYou may also pass your turn instead of placing a stone.',
+  'goRules.ch.liberties.title': 'Liberties',
+  'goRules.ch.liberties.body':
+    'Every stone needs breathing room. The empty points directly adjacent (up, down, left, right) are called liberties.\n\nA stone in the center has 4 liberties. On the edge — 3. In the corner — only 2.\n\nThe green arrows show the 4 liberties of the center stone.',
+  'goRules.ch.capture.title': 'Capturing Stones',
+  'goRules.ch.capture.body':
+    'When you fill the last liberty of an opponent\'s stone, it is captured and removed from the board.\n\nCaptured stones count as points for you at the end of the game.\n\nWatch the demonstration: Black fills the last liberty and captures the white stone.',
+  'goRules.ch.groups.title': 'Groups',
+  'goRules.ch.groups.body':
+    'Stones of the same color that are directly adjacent (horizontally or vertically) form a group. Diagonal connections do not count.\n\nA group shares its liberties — all empty points adjacent to any stone in the group.\n\nTo capture a group, you must fill ALL of its liberties.',
+  'goRules.ch.ko.title': 'The Ko Rule',
+  'goRules.ch.ko.body':
+    'Sometimes capturing creates a position where your opponent could immediately recapture, creating an infinite loop.\n\nThe ko rule prevents this: after capturing a single stone, your opponent cannot immediately recapture at that same point. They must play elsewhere first.\n\nThe forbidden point is marked with a red square on the board.',
+  'goRules.ch.suicide.title': 'Suicide Rule',
+  'goRules.ch.suicide.body':
+    'You cannot place a stone where it would have zero liberties — unless that placement captures opponent stones.\n\nIn this example, the center point is surrounded by black stones. Placing a white stone there would be suicide (zero liberties) and is forbidden.\n\nBut if placing a stone captures enemy stones, it gains liberties from the capture and is legal.',
+  'goRules.ch.territory.title': 'Territory',
+  'goRules.ch.territory.body':
+    'The goal of Go is to control more territory than your opponent.\n\nTerritory is the set of empty intersections that are completely surrounded by your stones. In this example, the left side is Black\'s territory and the right side is White\'s.\n\nThe highlighted points show each side\'s territory.',
+  'goRules.ch.scoring.title': 'Scoring',
+  'goRules.ch.scoring.body':
+    'The game ends when both players pass consecutively. Then you count the score.\n\nChinese rules: your score = your territory + your stones on the board.\nJapanese rules: your score = your territory + captured stones.\n\nWhite receives komi (7.5 or 6.5 extra points) to compensate for Black going first.\n\nDuring scoring, players mark dead stones — groups that would inevitably be captured.',
+  'goRules.ch.strategy.title': 'Basic Strategy',
+  'goRules.ch.strategy.body':
+    'Key principles for beginners:\n\n1. Corners first — it takes fewer stones to secure territory in corners.\n2. Then edges — sides are the next most efficient.\n3. Center last — the hardest place to hold territory.\n\nProtect your "eyes" — a group with two separate internal spaces (eyes) can never be captured.\n\nDon\'t try to save every stone — sometimes sacrificing stones gains you more territory elsewhere.',
+
   // Checkers game
   'checkers.readyToPlay': 'Ready to play',
   'checkers.whiteWins': 'White wins!',
@@ -186,7 +223,12 @@ const en: TranslationDict = {
   'stats.endDraw': 'draw',
   'stats.endResigned': 'resigned',
   'stats.endTimeout': 'timeout',
+  'stats.endNoMoves': 'no moves',
+  'stats.endPassed': 'two passes',
   'stats.movesLabel': 'moves',
+  'stats.tabChess': 'Chess',
+  'stats.tabCheckers': 'Checkers',
+  'stats.tabGo': 'Go',
 
   // Rules / Tutorial panel
   'rules.title': 'Rules of Chess',
@@ -415,6 +457,43 @@ const ru: TranslationDict = {
   'go.japanese': 'Японские',
   'go.playouts': 'розыгрышей',
 
+  // Go tutorial / rules panel
+  'goRules.title': 'Правила Го',
+  'goRules.close': 'Закрыть правила',
+  'goRules.chapter': 'Глава',
+  'goRules.prev': 'Назад',
+  'goRules.next': 'Далее',
+  'goRules.ch.board.title': 'Доска',
+  'goRules.ch.board.body':
+    'Го играется на сетке из линий. Камни ставятся на пересечения — точки, где линии пересекаются, — а не внутрь клеток.\n\nСтандартная доска 19×19, но новичкам удобнее начинать на 9×9. Отмеченные точки (хоси) — ориентиры на доске.\n\nЧёрные всегда ходят первыми.',
+  'goRules.ch.placing.title': 'Размещение камней',
+  'goRules.ch.placing.body':
+    'Игроки по очереди ставят один камень своего цвета на любое свободное пересечение.\n\nПоставленный камень никогда не двигается — он остаётся на месте, пока не будет захвачен.\n\nВместо хода можно спасовать (пропустить ход).',
+  'goRules.ch.liberties.title': 'Свободы (дыхания)',
+  'goRules.ch.liberties.body':
+    'Каждому камню нужно пространство для «дыхания». Пустые точки, непосредственно прилегающие (вверх, вниз, влево, вправо), называются свободами.\n\nКамень в центре имеет 4 свободы. На краю — 3. В углу — только 2.\n\nЗелёные стрелки показывают 4 свободы центрального камня.',
+  'goRules.ch.capture.title': 'Захват камней',
+  'goRules.ch.capture.body':
+    'Когда вы заполняете последнюю свободу камня противника, он захватывается и убирается с доски.\n\nЗахваченные камни приносят вам очки в конце партии.\n\nСмотрите демонстрацию: чёрные заполняют последнюю свободу и захватывают белый камень.',
+  'goRules.ch.groups.title': 'Группы',
+  'goRules.ch.groups.body':
+    'Камни одного цвета, стоящие рядом по горизонтали или вертикали, образуют группу. Диагональное соединение не считается.\n\nГруппа делит свободы — все пустые точки, прилегающие к любому камню в группе.\n\nЧтобы захватить группу, нужно заполнить ВСЕ её свободы.',
+  'goRules.ch.ko.title': 'Правило ко',
+  'goRules.ch.ko.body':
+    'Иногда захват создаёт позицию, в которой противник мог бы немедленно отбить камень, создавая бесконечный цикл.\n\nПравило ко это предотвращает: после захвата одиночного камня противник не может сразу же отбить на том же месте. Сначала он должен сходить в другом месте.\n\nЗапрещённая точка отмечается красным квадратом на доске.',
+  'goRules.ch.suicide.title': 'Правило самоубийства',
+  'goRules.ch.suicide.body':
+    'Нельзя ставить камень туда, где у него будет ноль свобод — если только этот ход не приводит к захвату камней противника.\n\nВ этом примере центральная точка окружена чёрными камнями. Поставить белый камень туда — самоубийство (ноль свобод), это запрещено.\n\nНо если постановка камня захватывает вражеские камни, он получает свободы от захвата — и ход разрешён.',
+  'goRules.ch.territory.title': 'Территория',
+  'goRules.ch.territory.body':
+    'Цель Го — контролировать больше территории, чем противник.\n\nТерритория — это пустые пересечения, полностью окружённые вашими камнями. В этом примере левая сторона — территория чёрных, правая — белых.\n\nВыделенные точки показывают территорию каждой стороны.',
+  'goRules.ch.scoring.title': 'Подсчёт очков',
+  'goRules.ch.scoring.body':
+    'Партия заканчивается, когда оба игрока спасуют подряд. Затем подсчитываются очки.\n\nКитайские правила: ваш счёт = ваша территория + ваши камни на доске.\nЯпонские правила: ваш счёт = ваша территория + захваченные камни.\n\nБелые получают коми (7,5 или 6,5 дополнительных очков) в качестве компенсации за то, что чёрные ходят первыми.\n\nПри подсчёте игроки отмечают мёртвые камни — группы, которые неизбежно были бы захвачены.',
+  'goRules.ch.strategy.title': 'Базовая стратегия',
+  'goRules.ch.strategy.body':
+    'Ключевые принципы для начинающих:\n\n1. Сначала углы — для захвата территории в углах нужно меньше камней.\n2. Затем края — стороны доски следующие по эффективности.\n3. Центр в последнюю очередь — там сложнее всего удержать территорию.\n\nЗащищайте свои «глаза» — группа с двумя отдельными внутренними пространствами (глазами) не может быть захвачена.\n\nНе пытайтесь спасти каждый камень — иногда жертва камней приносит больше территории в другом месте.',
+
   // Checkers game
   'checkers.readyToPlay': 'Готов к игре',
   'checkers.whiteWins': 'Победили белые!',
@@ -458,7 +537,12 @@ const ru: TranslationDict = {
   'stats.endDraw': 'ничья',
   'stats.endResigned': 'сдался',
   'stats.endTimeout': 'время',
+  'stats.endNoMoves': 'нет ходов',
+  'stats.endPassed': 'два паса',
   'stats.movesLabel': 'ходов',
+  'stats.tabChess': 'Шахматы',
+  'stats.tabCheckers': 'Шашки',
+  'stats.tabGo': 'Го',
 
   // Rules / Tutorial panel
   'rules.title': 'Правила шахмат',

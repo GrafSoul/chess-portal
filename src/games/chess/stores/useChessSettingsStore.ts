@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { AILevel, PieceColor } from '../engine/types';
+import type { AILevel, GameMode, PieceColor } from '../engine/types';
 import { DEFAULT_AI_LEVEL } from '../config/aiLevels';
 import { DEFAULT_CLOCK_PRESET } from '../config/clockPresets';
 import { DARK_SQUARE_DEFAULT_LIGHTNESS } from '../../../core/utils/grayscale';
@@ -24,6 +24,8 @@ interface ChessSettingsState {
   soundEnabled: boolean;
   /** Grayscale lightness (0–50) for dark squares — 0 = pure black, 50 = medium gray */
   darkSquareLightness: number;
+  /** Current game mode — persisted so it survives page reloads. */
+  gameMode: GameMode;
 }
 
 interface ChessSettingsActions {
@@ -36,6 +38,8 @@ interface ChessSettingsActions {
   setAutoRotate: (value: boolean) => void;
   setSoundEnabled: (value: boolean) => void;
   setDarkSquareLightness: (value: number) => void;
+  /** Switch between AI and local 2-player mode (persisted). */
+  setGameMode: (mode: GameMode) => void;
 }
 
 /** Persistent chess settings store */
@@ -51,6 +55,7 @@ export const useChessSettingsStore = create<ChessSettingsState & ChessSettingsAc
       autoRotate: false,
       soundEnabled: true,
       darkSquareLightness: DARK_SQUARE_DEFAULT_LIGHTNESS,
+      gameMode: 'ai',
 
       setAILevel: (level) => set({ aiLevel: level }),
       setClockPreset: (preset) => set({ clockPreset: preset }),
@@ -61,6 +66,7 @@ export const useChessSettingsStore = create<ChessSettingsState & ChessSettingsAc
       setAutoRotate: (value) => set({ autoRotate: value }),
       setSoundEnabled: (value) => set({ soundEnabled: value }),
       setDarkSquareLightness: (value) => set({ darkSquareLightness: value }),
+      setGameMode: (mode) => set({ gameMode: mode }),
     }),
     { name: 'chess-settings' },
   ),

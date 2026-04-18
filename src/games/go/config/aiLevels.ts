@@ -18,11 +18,15 @@ export interface AILevelConfig {
 }
 
 /** Map of AI level identifier to its configuration. */
+// Playout counts are calibrated for both 9×9 and 19×19 boards.
+// On 19×19 each playout can take ~5–15 ms due to board size, so even
+// 1 000 playouts with tactical rollouts can approach the time budget.
+// These values give snappy responses without sacrificing quality.
 export const GO_AI_LEVELS: Record<AILevel, AILevelConfig> = {
-  easy: { timeBudgetMs: 500, maxPlayouts: 1000 },
-  medium: { timeBudgetMs: 1500, maxPlayouts: 5000 },
-  hard: { timeBudgetMs: 4000, maxPlayouts: 20000 },
-  expert: { timeBudgetMs: 10000, maxPlayouts: 80000 },
+  easy:   { timeBudgetMs: 400,  maxPlayouts: 300  },
+  medium: { timeBudgetMs: 1200, maxPlayouts: 1500 },
+  hard:   { timeBudgetMs: 3000, maxPlayouts: 6000 },
+  expert: { timeBudgetMs: 7000, maxPlayouts: 25000 },
 };
 
 /** Default AI level used when none is specified. */

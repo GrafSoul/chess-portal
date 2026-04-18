@@ -11,8 +11,10 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { GO_AI_LEVELS, type AILevel } from '../../config/aiLevels';
+import { GO_CLOCK_PRESETS } from '../../config/clockPresets';
 import { useGoSettingsStore } from '../../stores/useGoSettingsStore';
 import { useGoStore } from '../../stores/useGoStore';
+import { useEscapeClose } from '../../hooks/useEscapeClose';
 import { useTranslation } from '../../../../core/i18n/useTranslation';
 import { LOCALE_LABELS, type Locale } from '../../../../core/i18n/translations';
 import type { BoardSize, Stone } from '../../engine/types';
@@ -27,6 +29,24 @@ const AI_LEVEL_LABEL_KEYS: Record<AILevel, string> = {
   medium: 'ai.amateur',
   hard: 'ai.master',
   expert: 'ai.grandmaster',
+};
+
+/**
+ * Human-readable labels for clock presets, keyed by preset id.
+ *
+ * Labels are intentionally compact (fit in a narrow dropdown) and use
+ * Go-specific notation: `B` for byo-yomi periods, `+` for Fischer increment.
+ * Kept inline (not translated) to avoid a large i18n key explosion — the
+ * notation is internationally understood by Go players.
+ */
+const CLOCK_PRESET_LABELS: Record<string, string> = {
+  unlimited: '∞ Unlimited',
+  'standard-blitz': 'Blitz 5+0',
+  'standard-rapid': 'Rapid 15+10',
+  'standard-classical': 'Classical 30+0',
+  'byoyomi-casual': 'Byo-yomi 1 + 3×30s',
+  'byoyomi-standard': 'Byo-yomi 5 + 5×30s',
+  'byoyomi-long': 'Byo-yomi 10 + 3×60s',
 };
 
 /**
@@ -97,11 +117,16 @@ export function GoSettingsPanel({
   const setScoringRules = useGoSettingsStore((s) => s.setScoringRules);
   const soundEnabled = useGoSettingsStore((s) => s.soundEnabled);
   const setSoundEnabled = useGoSettingsStore((s) => s.setSoundEnabled);
+  const clockPreset = useGoSettingsStore((s) => s.clockPreset);
+  const setClockPreset = useGoSettingsStore((s) => s.setClockPreset);
 
   const gameMode = useGoStore((s) => s.gameMode);
   const setGameMode = useGoStore((s) => s.setGameMode);
 
   const { t, locale, setLocale } = useTranslation();
+
+  // Keyboard dismissal — Esc closes the panel when open.
+  useEscapeClose(isOpen, onClose);
 
   /** Switches game mode and triggers a game reset. */
   const handleModeChange = (mode: 'ai' | 'local') => {
@@ -127,6 +152,12 @@ export function GoSettingsPanel({
     onResetRequired();
   };
 
+  /** Change the time-control preset and reset the game so the new clock starts fresh. */
+  const handleClockPresetChange = (preset: string) => {
+    setClockPreset(preset);
+    onResetRequired();
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -145,13 +176,16 @@ export function GoSettingsPanel({
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 240 }}
-            className="fixed top-0 right-0 bottom-0 w-80 bg-bg-card border-l border-border-primary
+            className="fixed top-0 right-0 bottom-0 w-80 max-w-[92vw] bg-bg-card border-l border-border-primary
               shadow-2xl z-50 overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="go-settings-title"
           >
             <div className="p-6">
               {/* Header */}
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-base font-semibold text-text-primary">
+                <h2 id="go-settings-title" className="text-base font-semibold text-text-primary">
                   {t('settings.title')}
                 </h2>
                 <button
@@ -280,6 +314,27 @@ export function GoSettingsPanel({
                         }`}
                     >
                       {t(rules === 'chinese' ? 'go.chinese' : 'go.japanese')}
+                    </button>
+                  ))}
+                </div>
+              </Section>
+
+              {/* Clock / time control */}
+              <Section title={t('settings.timeControl')}>
+                <div className="space-y-1.5">
+                  {Object.keys(GO_CLOCK_PRESETS).map((key) => (
+                    <button
+                      key={key}
+                      onClick={() => handleClockPresetChange(key)}
+                      className={`w-full px-3 py-2 text-[12px] font-medium rounded-lg
+                        border transition-all text-left
+                        ${
+                          clockPreset === key
+                            ? 'bg-accent/15 border-accent text-accent'
+                            : 'bg-bg-hover/50 border-border-subtle text-text-secondary hover:border-border-primary'
+                        }`}
+                    >
+                      {CLOCK_PRESET_LABELS[key] ?? key}
                     </button>
                   ))}
                 </div>

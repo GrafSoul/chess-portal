@@ -288,6 +288,82 @@ function getLegalMoveKeys(s: SimState): number[] {
 }
 
 /**
+ * Return the subset of `moves` that immediately capture at least one opponent
+ * group (i.e. an adjacent opponent group currently has exactly 1 liberty).
+ *
+ * Used in rollout to give the AI a strong preference for filling the last
+ * liberty of an opponent group — the most impactful tactical awareness a
+ * Go rollout can have without full look-ahead.
+ *
+ * @param board - Current board state.
+ * @param size  - Board dimension.
+ * @param moves - Candidate move keys.
+ * @param mover - Color of the player about to move.
+ * @returns Subset of `moves` that are capture moves (may be empty).
+ */
+function filterCaptureMoves(
+  board: Board,
+  size: number,
+  moves: number[],
+  mover: Stone,
+): number[] {
+  const opp = opposite(mover);
+  const result: number[] = [];
+  for (const mk of moves) {
+    const mx = mk % 64;
+    const my = (mk - mx) / 64;
+    for (let d = 0; d < 4; d++) {
+      const nx = mx + DX[d];
+      const ny = my + DY[d];
+      if (!inBounds(nx, ny, size)) continue;
+      if (board[ny][nx] !== opp) continue;
+      const { libertyCount } = getGroupAndLiberties(board, nx, ny, size);
+      if (libertyCount === 1) {
+        result.push(mk);
+        break; // one capturing neighbor is enough
+      }
+    }
+  }
+  return result;
+}
+
+/**
+ * Return the subset of `moves` that rescue a friendly group currently in
+ * atari (exactly 1 liberty) by extending it (adding a liberty) or capturing
+ * the attacker.
+ *
+ * @param board - Current board state.
+ * @param size  - Board dimension.
+ * @param moves - Candidate move keys.
+ * @param mover - Color of the player about to move.
+ * @returns Subset of `moves` that save at least one friendly group (may be empty).
+ */
+function filterSaveMoves(
+  board: Board,
+  size: number,
+  moves: number[],
+  mover: Stone,
+): number[] {
+  const result: number[] = [];
+  for (const mk of moves) {
+    const mx = mk % 64;
+    const my = (mk - mx) / 64;
+    for (let d = 0; d < 4; d++) {
+      const nx = mx + DX[d];
+      const ny = my + DY[d];
+      if (!inBounds(nx, ny, size)) continue;
+      if (board[ny][nx] !== mover) continue;
+      const { libertyCount } = getGroupAndLiberties(board, nx, ny, size);
+      if (libertyCount === 1) {
+        result.push(mk);
+        break;
+      }
+    }
+  }
+  return result;
+}
+
+/**
  * Check if placing at (x, y) would fill a single-point eye for `color`.
  * An eye is an empty point where all 4 orthogonal neighbors (or board edges)
  * are friendly, and at most 1 diagonal is enemy/empty on a non-edge point
@@ -383,6 +459,112 @@ function chineseScore(s: SimState, komi: number): number {
   return (blackStones + blackTerritory) - (whiteStones + whiteTerritory + komi);
 }
 
+// ─── Root tactical pre-search ───────────────────────────────────────────────
+//
+// Before running MCTS we scan the root position for obvious one-ply tactics.
+// On 19×19 with the "amateur" budget (~1500 playouts / 360 legal moves) each
+// root child gets only ~4 visits — far too few for meaningful UCT ranking,
+// so MCTS-only play devolves into noise and the AI ignores captures. This
+// pre-search guarantees the AI never misses a stone already in atari and
+// never loses its own group that can still be saved.
+//
+// Priority order:
+//   1. Capture — prefer the move that captures the most opponent stones.
+//   2. Save    — prefer the move that leaves the rescued group with the
+//      largest number of liberties (most durable save).
+//
+// Moves must survive `simPlay` (no suicide, no ko violation) to qualify.
+
+/**
+ * Count how many opponent stones a move would capture and whether the move
+ * itself is legal. Returns -1 when the move is rejected (suicide / ko).
+ */
+function countCaptures(rootState: SimState, moveKey: number): number {
+  const trial = cloneSimState(rootState);
+  const mx = moveKey % 64;
+  const my = (moveKey - mx) / 64;
+  const opp = opposite(trial.turn);
+  const beforeOpp = countStones(trial.board, trial.size, opp);
+  if (!simPlay(trial, mx, my)) return -1;
+  const afterOpp = countStones(trial.board, trial.size, opp);
+  return beforeOpp - afterOpp;
+}
+
+/** Count the liberties of the friendly group containing `(mx, my)` after playing it. */
+function libertiesAfterMove(rootState: SimState, moveKey: number): number {
+  const trial = cloneSimState(rootState);
+  const mx = moveKey % 64;
+  const my = (moveKey - mx) / 64;
+  if (!simPlay(trial, mx, my)) return -1;
+  // After simPlay, the placed stone belongs to the prior turn; look up liberties of
+  // its group in the new board state.
+  const { libertyCount } = getGroupAndLiberties(trial.board, mx, my, trial.size);
+  return libertyCount;
+}
+
+/** Total stones of color `c` on the board. */
+function countStones(board: Board, size: number, c: Stone): number {
+  let n = 0;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (board[y][x] === c) n++;
+    }
+  }
+  return n;
+}
+
+/**
+ * Find the root move that captures the largest number of opponent stones.
+ * Returns -1 when no legal capture exists.
+ */
+function findBestCapture(rootState: SimState, legal: number[]): number {
+  const candidates = filterCaptureMoves(
+    rootState.board,
+    rootState.size,
+    legal,
+    rootState.turn,
+  );
+  if (candidates.length === 0) return -1;
+  let best = -1;
+  let bestCount = 0;
+  for (const k of candidates) {
+    const c = countCaptures(rootState, k);
+    if (c > bestCount) {
+      bestCount = c;
+      best = k;
+    }
+  }
+  return best;
+}
+
+/**
+ * Find the root move that rescues a friendly group in atari with the most
+ * liberties after the save. Returns -1 when no viable save exists.
+ *
+ * Prefer moves leaving ≥2 liberties — a rescue to a single liberty just
+ * delays the capture by one move and gives up sente. If the only saves
+ * leave 1 liberty, we skip (let MCTS decide if the group is worth saving).
+ */
+function findBestSave(rootState: SimState, legal: number[]): number {
+  const candidates = filterSaveMoves(
+    rootState.board,
+    rootState.size,
+    legal,
+    rootState.turn,
+  );
+  if (candidates.length === 0) return -1;
+  let best = -1;
+  let bestLibs = 1; // strictly > 1 to be worth saving
+  for (const k of candidates) {
+    const libs = libertiesAfterMove(rootState, k);
+    if (libs > bestLibs) {
+      bestLibs = libs;
+      best = k;
+    }
+  }
+  return best;
+}
+
 // ─── MCTS ───────────────────────────────────────────────────────────────────
 
 /** Exploration constant for UCT. */
@@ -461,13 +643,25 @@ function mctsSearch(
   // Only one legal move — play it immediately
   if (rootLegal.length === 1) return rootLegal[0];
 
+  // ── Root tactical pre-search ─────────────────────────────────────────────
+  // Avoids the "MCTS plays random on large boards with small budgets" problem:
+  // if there is an obvious capture or save, play it directly without spending
+  // any of the time budget on MCTS. This is what separates a competent-looking
+  // amateur from a random-noise bot.
+  const bestCapture = findBestCapture(rootState, rootLegal);
+  if (bestCapture !== -1) return bestCapture;
+  const bestSave = findBestSave(rootState, rootLegal);
+  if (bestSave !== -1) return bestSave;
+
   const root = createNode(-1, null, [...rootLegal], rootState.turn);
   const startTime = performance.now();
   let playouts = 0;
 
   while (playouts < maxPlayouts) {
-    // Check time budget periodically
-    if ((playouts & 63) === 0 && performance.now() - startTime > timeBudgetMs) break;
+    // Check time budget periodically. On 19×19 a single playout can take
+    // 50–200 ms, so we check every 16 iterations (≈1–3 s resolution) to keep
+    // overshoot bounded — the previous "every 64" could run ~10 s past budget.
+    if ((playouts & 15) === 0 && performance.now() - startTime > timeBudgetMs) break;
 
     // Clone state for this iteration
     const state = cloneSimState(rootState);
@@ -526,7 +720,17 @@ function mctsSearch(
       node = child;
     }
 
-    // 3. SIMULATION — random playout with eye-filling avoidance
+    // 3. SIMULATION — tactical rollout with eye-filling avoidance.
+    //
+    // Priority order (first non-empty list wins):
+    //   1. Capture moves  — fill the last liberty of an opponent group
+    //   2. Save moves     — extend/rescue a friendly group in atari
+    //   3. Non-eye moves  — random legal play excluding own eye-fills
+    //   4. Any legal move — fallback (eye-fills allowed if pool is otherwise empty)
+    //
+    // This turns the AI from a purely random player into one that reliably
+    // captures stones in atari and defends its own groups — the single biggest
+    // quality gap between a random rollout and a real player.
     let depth = 0;
     while (!state.ended && depth < MAX_PLAYOUT_DEPTH) {
       const legal = getLegalMoveKeys(state);
@@ -536,15 +740,25 @@ function mctsSearch(
         continue;
       }
 
-      // Filter out moves that fill own single-point eyes — this is the
-      // most impactful single improvement for random playout quality in Go.
       const color = state.turn;
+
+      // Remove own single-point eye-fills first (baseline quality improvement).
       const nonEye = legal.filter((k) => {
         const kx = k % 64;
         const ky = (k - kx) / 64;
         return !isSinglePointEye(state.board, state.size, kx, ky, color);
       });
-      const pool = nonEye.length > 0 ? nonEye : legal;
+      const candidates = nonEye.length > 0 ? nonEye : legal;
+
+      // Tactical selection: check captures, then saves, then random.
+      const captures = filterCaptureMoves(state.board, state.size, candidates, color);
+      let pool: number[];
+      if (captures.length > 0) {
+        pool = captures;
+      } else {
+        const saves = filterSaveMoves(state.board, state.size, candidates, color);
+        pool = saves.length > 0 ? saves : candidates;
+      }
 
       const moveKey = pool[Math.floor(Math.random() * pool.length)];
       const mx = moveKey % 64;

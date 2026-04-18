@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { ChessEngine } from '../engine/ChessEngine';
+import { useChessSettingsStore } from './useChessSettingsStore';
 import type {
   Square,
   ChessMove,
@@ -74,6 +75,11 @@ interface ChessActions {
 
 const engine = new ChessEngine();
 
+// Read persisted settings so the initial gameMode reflects the user's
+// last choice (Zustand persist middleware hydrates synchronously on module
+// load, so calling `getState()` here is safe).
+const _initGameMode = useChessSettingsStore.getState().gameMode;
+
 const INITIAL_STATE: ChessState = {
   fen: engine.fen,
   turn: 'w',
@@ -85,7 +91,7 @@ const INITIAL_STATE: ChessState = {
   isCheck: false,
   capturedPieces: [],
   isAIThinking: false,
-  gameMode: 'ai',
+  gameMode: _initGameMode,
   pendingPromotion: null,
   whiteTimeMs: 600_000,
   blackTimeMs: 600_000,
@@ -243,6 +249,9 @@ export const useChessStore = create<ChessState & ChessActions>((set, get) => ({
   },
 
   setGameMode(mode: GameMode) {
+    // Write to both stores so the settings store persists the choice
+    // and the game store stays in sync for live reads.
+    useChessSettingsStore.getState().setGameMode(mode);
     set({ gameMode: mode });
   },
 

@@ -8,8 +8,10 @@
  * Layout mirrors `CheckersPlayerCard` for visual consistency across games.
  */
 
+import { memo } from 'react';
 import { useTranslation } from '../../../../core/i18n/useTranslation';
 import type { Stone } from '../../engine/types';
+import { formatGoClock, type GoClockSnapshot } from '../../engine/GoClockManager';
 
 /**
  * Props for the Go player card.
@@ -43,6 +45,12 @@ interface GoPlayerCardProps {
    * Renders a pulsing "thinking" label next to the name. Defaults to `false`.
    */
   isThinking?: boolean;
+  /**
+   * Clock snapshot for this side, or `null` when no clock is configured
+   * (`'unlimited'` preset). When provided, renders a mono-font time badge
+   * below the name that highlights in amber during byo-yomi and red when low.
+   */
+  clock?: GoClockSnapshot | null;
 }
 
 /**
@@ -76,19 +84,35 @@ interface GoPlayerCardProps {
  * />
  * ```
  */
-export function GoPlayerCard({
+function GoPlayerCardImpl({
   name,
   color,
   capturedCount,
   isActive,
   isThinking = false,
+  clock = null,
 }: GoPlayerCardProps) {
   const { t } = useTranslation();
 
+  // Derive clock visual state: amber once the player is in byo-yomi, red when
+  // the current display value is ≤10 s, default otherwise.
+  const clockLow =
+    clock !== null &&
+    ((clock.inByoyomi && clock.periodMs <= 10_000) ||
+      (!clock.inByoyomi && isFinite(clock.mainMs) && clock.mainMs <= 10_000));
+  const clockClass = clock?.inByoyomi
+    ? clockLow
+      ? 'text-red-400'
+      : 'text-amber-300'
+    : clockLow
+      ? 'text-red-400'
+      : 'text-text-primary';
+
   return (
     <div
-      className={`bg-bg-primary/75 backdrop-blur-lg border rounded-xl p-4 shadow-lg
-        transition-all duration-200 pointer-events-auto w-56
+      className={`bg-bg-primary/75 backdrop-blur-lg border rounded-xl shadow-lg
+        transition-all duration-200 pointer-events-auto
+        p-2.5 md:p-4 w-40 md:w-56
         ${isActive ? 'border-accent shadow-accent/20' : 'border-border-subtle'}`}
     >
       {/* Header: name + color indicator */}
@@ -111,6 +135,17 @@ export function GoPlayerCard({
           </span>
         )}
       </div>
+
+      {/* Clock badge — only visible when a timed preset is active */}
+      {clock && (
+        <div
+          className={`mb-2 font-mono tabular-nums text-[14px] md:text-[16px]
+            leading-none tracking-wide ${clockClass}
+            ${isActive ? 'font-semibold' : 'opacity-80'}`}
+        >
+          {formatGoClock(clock)}
+        </div>
+      )}
 
       {/* Captured stones count */}
       <div className="flex items-center gap-2 mt-1">
@@ -149,3 +184,10 @@ export function GoPlayerCard({
     </div>
   );
 }
+
+/**
+ * Memoised player card — the card only needs to update when name, colour,
+ * captured count, active, or thinking changes. Without this, every scene
+ * state update (hover moves, AI progress, etc.) would re-render both cards.
+ */
+export const GoPlayerCard = memo(GoPlayerCardImpl);

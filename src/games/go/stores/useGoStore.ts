@@ -27,6 +27,7 @@ import type {
 import type { ScoringRules } from '../config/scoringRules';
 import { findTerritories } from '../engine/scoring';
 import { getGroup, pointKey } from '../utils/groupUtils';
+import type { GoClockState } from '../engine/GoClockManager';
 
 /** Game mode — vs AI or local 2-player. Mirrors checkers. */
 export type GoGameMode = 'ai' | 'local';
@@ -111,10 +112,31 @@ interface GoState {
    * Recomputed each time `deadStones` changes during the scoring phase.
    */
   scoringBreakdown: ScoreBreakdown | null;
+
+  /**
+   * Final score breakdown after the game has ended via scoring.
+   * Populated by {@link finalizeScore} and cleared on {@link resetGame}.
+   * `null` for games ended by resignation or timeout.
+   */
+  finalScore: ScoreBreakdown | null;
+
+  /**
+   * Current clock snapshot for both sides.
+   * `null` when the `'unlimited'` preset is active — UI should hide clock
+   * displays entirely in that case.
+   */
+  clockState: GoClockState | null;
+
+  /** Whether the clock is actively counting down. */
+  clockRunning: boolean;
 }
 
 /** Actions available on the Go store. */
 interface GoActions {
+  /** Replace the observable clock snapshot (called from `GoClockManager.onTick`). */
+  updateClockState: (state: GoClockState | null) => void;
+  /** Mark whether the clock is actively counting down. */
+  setClockRunning: (running: boolean) => void;
   /** Place a stone at `point` for the side to move. */
   playAt: (point: Point) => boolean;
   /** Pass the current turn. */
@@ -155,10 +177,6 @@ interface GoActions {
   getEngine: () => GoEngine;
 }
 
-/** Initial session defaults. Later overridden by a settings store. */
-const INITIAL_BOARD_SIZE: BoardSize = 19;
-const INITIAL_RULES: ScoringRules = 'chinese';
-
 /**
  * Build a fresh engine for the current session config.
  *
@@ -170,7 +188,12 @@ function makeEngine(boardSize: BoardSize, scoringRules: ScoringRules): GoEngine 
   return new GoEngine({ boardSize, scoringRules });
 }
 
-let engine = makeEngine(INITIAL_BOARD_SIZE, INITIAL_RULES);
+// Read persisted settings so the engine and store initial values match what
+// the user last chose, without requiring an explicit resetGame() call.
+// `useGoSettingsStore` is imported above, so its localStorage hydration
+// (which is synchronous) has already completed by this point.
+const _initSettings = useGoSettingsStore.getState();
+let engine = makeEngine(_initSettings.boardSize, _initSettings.scoringRules);
 
 /** Fields derived directly from the engine — recomputed on every action. */
 type EngineDerived = Pick<
@@ -228,11 +251,11 @@ function snapshot(): EngineDerived {
  */
 export const useGoStore = create<GoState & GoActions>((set, get) => ({
   ...snapshot(),
-  boardSize: INITIAL_BOARD_SIZE,
-  scoringRules: INITIAL_RULES,
+  boardSize: _initSettings.boardSize,
+  scoringRules: _initSettings.scoringRules,
   komi: engine.komi,
   isAIThinking: false,
-  gameMode: 'ai',
+  gameMode: _initSettings.gameMode,
   lastRejection: null,
   fadingStones: [],
   lastSuccessTick: 0,
@@ -242,6 +265,17 @@ export const useGoStore = create<GoState & GoActions>((set, get) => ({
   deadStones: [],
   territoryMap: null,
   scoringBreakdown: null,
+  finalScore: null,
+  clockState: null,
+  clockRunning: false,
+
+  updateClockState(state) {
+    set({ clockState: state });
+  },
+
+  setClockRunning(running) {
+    set({ clockRunning: running });
+  },
 
   playAt(point: Point) {
     const state = get();
@@ -333,8 +367,14 @@ export const useGoStore = create<GoState & GoActions>((set, get) => ({
   finalizeScore() {
     if (engine.status !== 'scoring') return;
     const { deadStones } = get();
-    engine.finalizeScore(deadStones);
-    set({ ...snapshot(), deadStones: [], territoryMap: null, scoringBreakdown: null });
+    const finalScore = engine.finalizeScore(deadStones);
+    set({
+      ...snapshot(),
+      deadStones: [],
+      territoryMap: null,
+      scoringBreakdown: null,
+      finalScore,
+    });
   },
 
   toggleDeadStone(point: Point) {
@@ -419,14 +459,18 @@ export const useGoStore = create<GoState & GoActions>((set, get) => ({
       deadStones: [],
       territoryMap: null,
       scoringBreakdown: null,
+      finalScore: null,
       lastSuccessTick: 0,
       lastCaptureTick: 0,
       lastRejectTick: 0,
       lastPassTick: 0,
+      // Leave `clockState` / `clockRunning` to the clock hook — it owns them.
     });
   },
 
   setGameMode(mode) {
+    // Persist via settings store so the choice survives page reloads.
+    useGoSettingsStore.getState().setGameMode(mode);
     set({ gameMode: mode });
   },
 

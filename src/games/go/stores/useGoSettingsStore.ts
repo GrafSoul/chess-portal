@@ -14,7 +14,9 @@ import { persist } from 'zustand/middleware';
 import type { AILevel } from '../config/aiLevels';
 import { DEFAULT_AI_LEVEL } from '../config/aiLevels';
 import type { ScoringRules } from '../config/scoringRules';
+import { DEFAULT_GO_CLOCK_PRESET } from '../config/clockPresets';
 import type { BoardSize, Stone } from '../engine/types';
+import type { GoGameMode } from './useGoStore';
 
 /**
  * Observable slice of Go settings state managed by Zustand.
@@ -45,6 +47,8 @@ interface GoSettingsState {
   scoringRules: ScoringRules;
   /** Whether in-game sound effects (stone placement, capture) are audible. */
   soundEnabled: boolean;
+  /** Current game mode — persisted so it survives page reloads. */
+  gameMode: GoGameMode;
 }
 
 /**
@@ -74,6 +78,8 @@ interface GoSettingsActions {
   setScoringRules: (rules: ScoringRules) => void;
   /** Enable or disable sound effects immediately. */
   setSoundEnabled: (enabled: boolean) => void;
+  /** Switch between AI and local 2-player mode. */
+  setGameMode: (mode: GoGameMode) => void;
 }
 
 /**
@@ -106,10 +112,11 @@ export const useGoSettingsStore = create<GoSettingsState & GoSettingsActions>()(
     (set) => ({
       aiLevel: DEFAULT_AI_LEVEL,
       playerColor: 'b',
-      clockPreset: 'none',
+      clockPreset: DEFAULT_GO_CLOCK_PRESET,
       boardSize: 19,
       scoringRules: 'chinese',
       soundEnabled: true,
+      gameMode: 'ai',
 
       setAILevel: (level) => set({ aiLevel: level }),
       setPlayerColor: (color) => set({ playerColor: color }),
@@ -117,6 +124,7 @@ export const useGoSettingsStore = create<GoSettingsState & GoSettingsActions>()(
       setBoardSize: (size) => set({ boardSize: size }),
       setScoringRules: (rules) => set({ scoringRules: rules }),
       setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
+      setGameMode: (mode) => set({ gameMode: mode }),
     }),
     { name: 'go-settings' },
   ),

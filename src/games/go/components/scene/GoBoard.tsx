@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { Text } from '@react-three/drei';
 import type { BoardSize, Point, Stone } from '../../engine/types';
 import { BOARD_CONFIGS } from '../../config/boardSizes';
@@ -36,6 +36,10 @@ interface GoBoardProps {
   interactive: boolean;
   /** Called with the grid point when the player clicks an intersection. */
   onIntersectionClick: (point: Point) => void;
+  /** Optional pointer-enter callback, used to drive the ghost-stone hover preview. */
+  onIntersectionHoverEnter?: (point: Point) => void;
+  /** Optional pointer-leave callback paired with {@link GoBoardProps.onIntersectionHoverEnter}. */
+  onIntersectionHoverLeave?: (point: Point) => void;
   /**
    * Territory ownership map produced by `findTerritories`.
    * Keyed by `"x,y"` → `'b'`, `'w'`, or `'neutral'`. Only `'b'` and `'w'`
@@ -96,12 +100,14 @@ const TERRITORY_MARKER_SIZE = CELL_SIZE * 0.22;
  * />
  * ```
  */
-export function GoBoard({
+function GoBoardImpl({
   boardSize,
   lastPoint,
   koPoint,
   interactive,
   onIntersectionClick,
+  onIntersectionHoverEnter,
+  onIntersectionHoverLeave,
   territoryMap = null,
 }: GoBoardProps) {
   const world = boardWorldSize(boardSize);
@@ -321,6 +327,8 @@ export function GoBoard({
           z={z}
           interactive={interactive}
           onClick={onIntersectionClick}
+          onHoverEnter={onIntersectionHoverEnter}
+          onHoverLeave={onIntersectionHoverLeave}
         />
       ))}
 
@@ -332,3 +340,14 @@ export function GoBoard({
     </group>
   );
 }
+
+/**
+ * Memoised 3D board.
+ *
+ * The board's sub-trees include hundreds of meshes (grid lines, coordinate
+ * labels, intersection hit-targets). Re-rendering them on every hover event
+ * in `GoScene` would be wasteful — with `memo`, the board only re-renders
+ * when its actual props (board size, last move, ko, interactivity, territory)
+ * change.
+ */
+export const GoBoard = memo(GoBoardImpl);

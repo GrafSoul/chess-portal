@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { CheckersEngine } from '../engine/CheckersEngine';
+import { useCheckersSettingsStore } from './useCheckersSettingsStore';
 import { getPieceAt } from '../utils/fenUtils';
 import type {
   Square,
@@ -101,6 +102,11 @@ interface CheckersActions {
 
 const engine = new CheckersEngine();
 
+// Read persisted settings so the initial gameMode reflects the user's
+// last choice (Zustand persist middleware hydrates synchronously on module
+// load, so calling `getState()` here is safe).
+const _initGameMode = useCheckersSettingsStore.getState().gameMode;
+
 const INITIAL_STATE: CheckersState = {
   fen: engine.fen,
   turn: 'w',
@@ -111,7 +117,7 @@ const INITIAL_STATE: CheckersState = {
   winner: null,
   capturedPieces: [],
   isAIThinking: false,
-  gameMode: 'ai',
+  gameMode: _initGameMode,
   whiteTimeMs: 600_000,
   blackTimeMs: 600_000,
   clockRunning: false,
@@ -340,6 +346,9 @@ export const useCheckersStore = create<CheckersState & CheckersActions>(
     },
 
     setGameMode(mode: GameMode) {
+      // Write to both stores so the settings store persists the choice
+      // and the game store stays in sync for live reads.
+      useCheckersSettingsStore.getState().setGameMode(mode);
       set({ gameMode: mode });
     },
 

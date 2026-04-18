@@ -1,3 +1,4 @@
+import { useCallback, useState } from 'react';
 import { useGoStore } from '../../stores/useGoStore';
 import { useGoDisplayedBoardState } from '../../hooks/useGoDisplayedBoardState';
 import { GoEnvironment } from './GoEnvironment';
@@ -5,6 +6,8 @@ import { GoLighting } from './GoLighting';
 import { GoBoard } from './GoBoard';
 import { GoStoneSet } from './GoStoneSet';
 import { FadingGoStone } from './FadingGoStone';
+import { GoTutorialOverlay } from './GoTutorialOverlay';
+import { GoHoverPreview } from './GoHoverPreview';
 import { pointToWorld } from './boardLayout';
 import type { Point } from '../../engine/types';
 
@@ -23,6 +26,11 @@ import type { Point } from '../../engine/types';
  *   during scoring to avoid visual clutter.
  * - **Non-interactive** (AI thinking / game ended) — clicks are swallowed.
  *
+ * Hover preview:
+ * - In play mode, hovering an empty legal intersection shows a semi-transparent
+ *   "ghost" stone in the current player's color. The preview is suppressed when
+ *   the intersection is occupied, marked as ko, or when play is not interactive.
+ *
  * @example
  * ```tsx
  * // Mount inside a React-Three-Fiber <Canvas>
@@ -36,6 +44,9 @@ export function GoScene() {
   const playAt = useGoStore((s) => s.playAt);
   const toggleDeadStone = useGoStore((s) => s.toggleDeadStone);
   const fadingStones = useGoStore((s) => s.fadingStones);
+  const turn = useGoStore((s) => s.turn);
+
+  const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
 
   // During scoring, clicks toggle dead stones instead of playing moves.
   const handleClick = display.interactive
@@ -48,6 +59,45 @@ export function GoScene() {
       }
     : () => {};
 
+  const handleHoverEnter = useCallback((p: Point) => {
+    setHoveredPoint(p);
+  }, []);
+
+  // Clear hover when the pointer leaves the last-hovered cell. An incoming
+  // `onHoverEnter` from the next cell will overwrite this immediately, so
+  // there's no gap / flicker between adjacent intersections.
+  const handleHoverLeave = useCallback((p: Point) => {
+    setHoveredPoint((prev) =>
+      prev && prev.x === p.x && prev.y === p.y ? null : prev,
+    );
+  }, []);
+
+  // Preview is only valid during play (not scoring, tutorial, AI thinking,
+  // or game end) and only on empty non-ko intersections.
+  const canShowHover =
+    display.interactive &&
+    !display.scoring &&
+    !display.tutorialActive &&
+    hoveredPoint !== null;
+
+  const hoveredCellEmpty =
+    hoveredPoint !== null &&
+    display.board[hoveredPoint.y]?.[hoveredPoint.x] === null;
+
+  const hoveredIsKo =
+    hoveredPoint !== null &&
+    display.koPoint !== null &&
+    display.koPoint.x === hoveredPoint.x &&
+    display.koPoint.y === hoveredPoint.y;
+
+  const showPreview = canShowHover && hoveredCellEmpty && !hoveredIsKo;
+
+  let previewX = 0;
+  let previewZ = 0;
+  if (hoveredPoint) {
+    [previewX, previewZ] = pointToWorld(hoveredPoint, display.boardSize);
+  }
+
   return (
     <>
       <GoEnvironment />
@@ -59,6 +109,8 @@ export function GoScene() {
         koPoint={display.scoring ? null : display.koPoint}
         interactive={display.interactive}
         onIntersectionClick={handleClick}
+        onIntersectionHoverEnter={handleHoverEnter}
+        onIntersectionHoverLeave={handleHoverLeave}
         territoryMap={display.territoryMap}
       />
 
@@ -68,12 +120,25 @@ export function GoScene() {
         deadStones={display.deadStones}
       />
 
-      {fadingStones.map((f) => {
-        const [fx, fz] = pointToWorld(f.point, display.boardSize);
-        return (
-          <FadingGoStone key={f.id} x={fx} z={fz} color={f.color} />
-        );
-      })}
+      {/* Ghost stone follows the cursor on legal empty intersections. */}
+      <GoHoverPreview
+        x={previewX}
+        z={previewZ}
+        color={turn}
+        visible={showPreview}
+      />
+
+      {/* Fading capture ghosts (only in game mode, not tutorial) */}
+      {!display.tutorialActive &&
+        fadingStones.map((f) => {
+          const [fx, fz] = pointToWorld(f.point, display.boardSize);
+          return (
+            <FadingGoStone key={f.id} x={fx} z={fz} color={f.color} />
+          );
+        })}
+
+      {/* Tutorial overlays (highlights + arrows) */}
+      <GoTutorialOverlay />
     </>
   );
 }

@@ -8,6 +8,7 @@
  */
 
 import { useGoStore } from '../stores/useGoStore';
+import { useGoTutorialStore } from '../stores/useGoTutorialStore';
 import type { Board, BoardSize, Point, Stone } from '../engine/types';
 
 /**
@@ -71,6 +72,12 @@ export interface GoDisplayedBoardState {
  * ```
  */
 export function useGoDisplayedBoardState(): GoDisplayedBoardState {
+  // Tutorial store — when active, overrides the game board entirely.
+  const tutorialActive = useGoTutorialStore((s) => s.isActive);
+  const tutorialBoard = useGoTutorialStore((s) => s.board);
+  const tutorialBoardSize = useGoTutorialStore((s) => s.boardSize);
+
+  // Game store — used when tutorial is inactive.
   const board = useGoStore((s) => s.board);
   const boardSize = useGoStore((s) => s.boardSize);
   const lastPoint = useGoStore((s) => s.lastPoint);
@@ -79,6 +86,21 @@ export function useGoDisplayedBoardState(): GoDisplayedBoardState {
   const isAIThinking = useGoStore((s) => s.isAIThinking);
   const deadStones = useGoStore((s) => s.deadStones);
   const territoryMap = useGoStore((s) => s.territoryMap);
+
+  // Tutorial mode: board is non-interactive, no scoring, no overlays.
+  if (tutorialActive) {
+    return {
+      board: tutorialBoard,
+      boardSize: tutorialBoardSize,
+      lastPoint: null,
+      koPoint: null,
+      interactive: false,
+      scoring: false,
+      deadStones: [],
+      territoryMap: null,
+      tutorialActive: true,
+    };
+  }
 
   const isScoring = gameStatus === 'scoring';
 

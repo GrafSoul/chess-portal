@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { memo, useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { Group } from 'three';
 import type { Stone } from '../../engine/types';
@@ -65,7 +65,7 @@ const DROP_DURATION = 0.22;
  * <GoStone color="w" x={wx} z={wz} isDead={true} />
  * ```
  */
-export function GoStone({ color, x, z, isDead = false }: GoStoneProps) {
+function GoStoneImpl({ color, x, z, isDead = false }: GoStoneProps) {
   const groupRef = useRef<Group>(null);
   const progressRef = useRef(0);
   const mat = color === 'b' ? BLACK_MAT : WHITE_MAT;
@@ -133,3 +133,13 @@ export function GoStone({ color, x, z, isDead = false }: GoStoneProps) {
     </group>
   );
 }
+
+/**
+ * Memoised 3D Go stone.
+ *
+ * Up to ~361 stones can be on-screen on a full 19×19 board. Skipping re-renders
+ * when props (colour, position, dead flag) are unchanged avoids needless work
+ * on unrelated state changes (e.g. status-bar updates). Parent keeps stable
+ * identities by deriving positions from `pointToWorld(point, boardSize)`.
+ */
+export const GoStone = memo(GoStoneImpl);

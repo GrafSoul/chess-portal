@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import type { Board, BoardSize, Point } from '../../engine/types';
 import { GoStone } from './GoStone';
 import { pointToWorld } from './boardLayout';
@@ -52,7 +52,7 @@ interface GoStoneSetProps {
  * />
  * ```
  */
-export function GoStoneSet({ board, boardSize, deadStones = [] }: GoStoneSetProps) {
+function GoStoneSetImpl({ board, boardSize, deadStones = [] }: GoStoneSetProps) {
   const deadSet = useMemo(() => {
     const s = new Set<string>();
     for (const p of deadStones) s.add(`${p.x},${p.y}`);
@@ -87,3 +87,10 @@ export function GoStoneSet({ board, boardSize, deadStones = [] }: GoStoneSetProp
     </group>
   );
 }
+
+/**
+ * Memoised stone set — re-renders only when `board`, `boardSize`, or the
+ * `deadStones` reference changes. Important because unrelated scene state
+ * (e.g. `hoveredPoint` in `GoScene`) would otherwise walk all 361 children.
+ */
+export const GoStoneSet = memo(GoStoneSetImpl);
