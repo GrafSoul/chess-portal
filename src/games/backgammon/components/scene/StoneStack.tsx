@@ -120,16 +120,38 @@ export const StoneStack = memo(
       document.body.style.cursor = 'default';
     }, []);
 
+    // Invisible click-catcher plane dimensions — computed before early return
+    // so hooks run unconditionally.
+    const hitPlaneZ = useMemo(() => {
+      if (visibleCount <= 1) return safeLayout.basePosition.z;
+      const first = safeLayout.basePosition.z;
+      const last = first + safeLayout.stackDirection * (visibleCount - 1) * spacing;
+      return (first + last) / 2;
+    }, [safeLayout, visibleCount, spacing]);
+
+    const hitPlaneLength = useMemo(() => {
+      if (visibleCount <= 1) return STONE_RADIUS * 2;
+      return Math.abs(safeLayout.stackDirection * (visibleCount - 1) * spacing) + STONE_RADIUS * 2;
+    }, [safeLayout, visibleCount, spacing]);
+
     // Now that every hook has been called, it's safe to bail out.
     if (color === null || count === 0 || !layout) {
       // Still render legal dest ring for empty points that are valid destinations
       if (isLegalDest && layout) {
         return (
-          <group
-            onClick={handleClick}
-            onPointerOver={handlePointerOver}
-            onPointerOut={handlePointerOut}
-          >
+          <group>
+            {/* Invisible click plane for empty legal destination */}
+            <mesh
+              position={[layout.basePosition.x, BOARD_SURFACE_Y + 0.01, layout.basePosition.z]}
+              rotation={[-Math.PI / 2, 0, 0]}
+              onClick={handleClick}
+              onPointerOver={handlePointerOver}
+              onPointerOut={handlePointerOut}
+            >
+              <planeGeometry args={[STONE_RADIUS * 2, STONE_RADIUS * 2]} />
+              <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+            </mesh>
+            {/* Visible green ring */}
             <mesh
               position={[layout.basePosition.x, BOARD_SURFACE_Y + 0.004, layout.basePosition.z]}
               rotation={[-Math.PI / 2, 0, 0]}
@@ -144,11 +166,19 @@ export const StoneStack = memo(
     }
 
     return (
-      <group
-        onClick={handleClick}
-        onPointerOver={handlePointerOver}
-        onPointerOut={handlePointerOut}
-      >
+      <group>
+        {/* Invisible click-catcher plane — guaranteed raycast hit */}
+        <mesh
+          position={[safeLayout.basePosition.x, BOARD_SURFACE_Y + STONE_HEIGHT + 0.01, hitPlaneZ]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          onClick={handleClick}
+          onPointerOver={handlePointerOver}
+          onPointerOut={handlePointerOut}
+        >
+          <planeGeometry args={[STONE_RADIUS * 2, hitPlaneLength]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+
         {/* Visible stone meshes */}
         {stonePositions.map((pos, i) => (
           <BackgammonStone
