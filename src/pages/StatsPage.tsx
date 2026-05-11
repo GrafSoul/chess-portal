@@ -26,10 +26,14 @@ import {
   useGoStatsStore,
   selectGoStatsSummary,
 } from '../games/go/stores/useGoStatsStore';
+import {
+  useBackgammonStatsStore,
+  selectBackgammonStatsSummary,
+} from '../games/backgammon/stores/useBackgammonStatsStore';
 import { useTranslation } from '../core/i18n/useTranslation';
 
 /** Identifier of which game's stats are shown. */
-type StatsTab = 'chess' | 'checkers' | 'go';
+type StatsTab = 'chess' | 'checkers' | 'go' | 'backgammon';
 
 /** Normalized record used by the shared `HistoryRow` renderer. */
 interface NormalizedRecord {
@@ -110,6 +114,12 @@ const GO_END_REASON_KEYS: Record<string, string> = {
   timeout: 'stats.endTimeout',
 };
 
+/** i18n key for a Backgammon end reason. */
+const BACKGAMMON_END_REASON_KEYS: Record<string, string> = {
+  completed: 'stats.endCompleted',
+  resigned: 'stats.endResigned',
+};
+
 /**
  * Statistics page with per-game tabs. Each tab reads its own persisted
  * stats store and shows an independent summary + history list.
@@ -126,12 +136,15 @@ export function StatsPage() {
   const clearCheckers = useCheckersStatsStore((s) => s.clearStats);
   const goHistory = useGoStatsStore((s) => s.gameHistory);
   const clearGo = useGoStatsStore((s) => s.clearStats);
+  const backgammonHistory = useBackgammonStatsStore((s) => s.gameHistory);
+  const clearBackgammon = useBackgammonStatsStore((s) => s.clearStats);
 
   const summary: SummaryCounts = useMemo(() => {
     if (tab === 'chess') return selectChessSummary(chessHistory);
     if (tab === 'checkers') return selectCheckersSummary(checkersHistory);
-    return selectGoStatsSummary(goHistory);
-  }, [tab, chessHistory, checkersHistory, goHistory]);
+    if (tab === 'go') return selectGoStatsSummary(goHistory);
+    return selectBackgammonStatsSummary(backgammonHistory);
+  }, [tab, chessHistory, checkersHistory, goHistory, backgammonHistory]);
 
   // Map the active tab's store into the shared display shape.
   const records: NormalizedRecord[] = useMemo(() => {
@@ -157,17 +170,29 @@ export function StatsPage() {
         durationMs: r.durationMs,
       }));
     }
-    return goHistory.map((r) => ({
+    if (tab === 'go') {
+      return goHistory.map((r) => ({
+        id: r.id,
+        finishedAt: r.finishedAt,
+        mode: r.mode,
+        outcome: r.outcome,
+        endReasonKey: GO_END_REASON_KEYS[r.endReason] ?? 'stats.endDraw',
+        moveCount: r.moveCount,
+        durationMs: r.durationMs,
+        badge: `${r.boardSize}×${r.boardSize}${r.margin > 0 ? ` · +${r.margin}` : ''}`,
+      }));
+    }
+    return backgammonHistory.map((r) => ({
       id: r.id,
       finishedAt: r.finishedAt,
       mode: r.mode,
       outcome: r.outcome,
-      endReasonKey: GO_END_REASON_KEYS[r.endReason] ?? 'stats.endDraw',
+      endReasonKey: BACKGAMMON_END_REASON_KEYS[r.endReason] ?? 'stats.endResigned',
       moveCount: r.moveCount,
       durationMs: r.durationMs,
-      badge: `${r.boardSize}×${r.boardSize}${r.margin > 0 ? ` · +${r.margin}` : ''}`,
+      badge: r.winType && r.winType !== 'normal' ? r.winType.toUpperCase() : undefined,
     }));
-  }, [tab, chessHistory, checkersHistory, goHistory]);
+  }, [tab, chessHistory, checkersHistory, goHistory, backgammonHistory]);
 
   const stats = [
     { labelKey: 'stats.played', value: summary.played, borderColor: 'border-t-text-muted' },
@@ -180,13 +205,15 @@ export function StatsPage() {
     if (!window.confirm(t('stats.confirmClear'))) return;
     if (tab === 'chess') clearChess();
     else if (tab === 'checkers') clearCheckers();
-    else clearGo();
+    else if (tab === 'go') clearGo();
+    else clearBackgammon();
   };
 
   const tabs: { id: StatsTab; labelKey: string }[] = [
     { id: 'chess', labelKey: 'stats.tabChess' },
     { id: 'checkers', labelKey: 'stats.tabCheckers' },
     { id: 'go', labelKey: 'stats.tabGo' },
+    { id: 'backgammon', labelKey: 'stats.tabBackgammon' },
   ];
 
   return (
@@ -213,7 +240,7 @@ export function StatsPage() {
       {/* Tab selector */}
       <div
         role="tablist"
-        className="w-full max-w-md mb-6 grid grid-cols-3 gap-1 p-1 bg-bg-card border border-border-primary rounded-lg"
+        className="w-full max-w-md mb-6 grid grid-cols-4 gap-1 p-1 bg-bg-card border border-border-primary rounded-lg"
       >
         {tabs.map((tabItem) => {
           const active = tab === tabItem.id;

@@ -1,9 +1,13 @@
 # Active Context
 
 ## Current Focus
-[2026-04-18] — Go is now feature-complete with per-game stats and a working clock. Open tech debt: Go AI engine replacement (hand-written MCTS is weak, amateur plays near-random on 19×19), settings gear icon in GoTopBar uses a fill-only Heroicon rendered as stroke (looks broken — needs replacement). See analysis in chat for full details.
+[2026-05-09] — Backgammon board visual overhaul: realistic folding wooden board. Scalloped rails, proper proportions, visible triangle inlays.
 
 ## Recent Changes
+- [2026-05-09] — Backgammon board visual overhaul COMPLETE. Board: BOARD_DEPTH 8→14 (fold=long side), POINT_HEIGHT→5.5, SIDE_BORDER_WIDTH→1.2, VISUAL_DIVIDER_WIDTH→1.0, SCALLOP_RADIUS→0.42 (fits stones), scalloped rails via ExtrudeGeometry, triangle colors (cream #FFF8DC + brown #5C3A1E), z-fighting fixed (removed bevels, raised field, narrowed slab). Dice: flat pips (circleGeometry instead of sphereGeometry), natural physics settle (restitution=0.05, friction=0.9, linearDamping=1.5, angularDamping=0.12, gravityScale=1.5), emergency snap fallback after 5s. Files: boardLayout.ts, BackgammonBoard.tsx, BackgammonPoint.tsx, BackgammonCameraRig.tsx, DiceCup.tsx, DiceRoller.tsx, Dice3D.tsx, DicePip.tsx.
+- [2026-04-29] — Backgammon Sprint 7: Interactive tutorial panel. 6 new files (tutorialChapters.ts, useBackgammonTutorialStore.ts, useBackgammonTutorialLoop.ts, useBackgammonDisplayedBoardState.ts, BackgammonTutorialOverlay.tsx, BackgammonRulesPanel.tsx). BackgammonScene.tsx upgraded to use display hook + overlay. BackgammonPage.tsx wired rulesOpen state. translations.ts: 25 backgammonRules.* keys (EN+RU). Build ✅ Lint ✅ Tests 182/182 ✅.
+- [2026-04-29] — AI Difficulty Overhaul: Go (goWorker level gating: pre-search by level, rollout quality, child selection, UCT_C; GoAIService passes level; useGoAI passes level name), Checkers (checkersWorker top-3 randomization 30% on easy, all root moves evaluated; CheckersAIService passes level; useCheckersAI passes level name). Chess StockfishService already correct (uses movetime). Build ✅ Lint ✅ Tests 182/182 ✅.
+- [2026-04-26] — Backgammon Sprint 5: Full UI/UX overlay. 5 new components (TopBar, PlayerCard, MoveHistory, SettingsPanel, EndGameDialog), BackgammonPage rewritten, shared useEscapeClose hook extracted to core/hooks, 36 i18n keys added (EN+RU). Build ✅ Lint ✅ Tests 182/182 ✅.
 - [2026-04-17] — Go Sprint 1: Engine (GoEngine, types, scoring, groupUtils, 54 tests)
 - [2026-04-17] — Go Sprint 2: 3D MVP (scene, store, page, routing, stones, board, camera)
 - [2026-04-17] — Go Sprint 3: Captures animation (FadingGoStone), ko visual, sounds (GoSoundService), scoring flow

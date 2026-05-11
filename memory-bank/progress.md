@@ -1,5 +1,43 @@
 # Progress
 
+## [2026-04-29] — Backgammon Sprint 7: Interactive Tutorial Panel
+- **Status:** COMPLETED
+- **What:** Full interactive tutorial (mirrors GoRulesPanel / CheckersRulesPanel pattern):
+  - `tutorialChapters.ts` — 10 chapters (board, setup, movement, dice, nohit, head, blocking, bearoff, winning, strategy) with board positions, highlights, arrows, looped animations
+  - `useBackgammonTutorialStore.ts` — Zustand store (enter/exit/setBoard/snapBoard/setHighlights/setArrows)
+  - `useBackgammonTutorialLoop.ts` — async cancellation-token loop for animated demos
+  - `useBackgammonDisplayedBoardState.ts` — routes rendering data to tutorial or live store
+  - `BackgammonTutorialOverlay.tsx` — 3D highlight rings + directional arrows in R3F scene
+  - `BackgammonRulesPanel.tsx` — Framer Motion spring slide-in, progress dots, chapter nav, Escape key close
+  - `BackgammonScene.tsx` — upgraded to use display hook + overlay + DiceRoller suppression
+  - `BackgammonPage.tsx` — wired rulesOpen state + BackgammonRulesPanel
+  - `translations.ts` — 25 backgammonRules.* keys (EN+RU)
+- **Gates:** Build ✅ Lint ✅ Tests 182/182 ✅
+
+## [2026-04-29] — AI Difficulty Overhaul
+- **Status:** COMPLETED
+- **What:** Genuine difficulty differentiation across Go and Checkers AI.
+  - **Go** (`goWorker.ts`): level-gated pre-search (easy→none, medium→save-only, hard/expert→capture+save), rollout quality (easy→pure random, medium+→tactical with eye filter), child selection (easy→40% top-3 random, medium+→max visits), UCT_C=1.6 for hard/expert. `GoAIService.setLevel(config, levelName)` stores and forwards level. `useGoAI` passes `aiLevel` string.
+  - **Checkers** (`checkersWorker.ts`): all root moves evaluated (no root alpha-beta pruning), 30% random top-3 selection on easy. `CheckersAIService.setLevel(config, levelName)`. `useCheckersAI` passes level.
+  - **Chess**: already correct — `StockfishService` uses `go movetime N` + `Skill Level` UCI option. `depth` field in config is display-only (shown in SettingsPanel UI).
+- **Gates:** Build ✅ Lint ✅ Tests 182/182 ✅
+
+## [2026-04-26] — Backgammon Sprint 6: Stats
+- **Status:** COMPLETED
+- **What:** useBackgammonStatsStore (persisted to 'backgammon-stats', MAX_RECORDS=200, selectBackgammonStatsSummary helper). Stats recording wired into useBackgammonGame: gameStartedAt + prevStatus + recordedRef + resignedRef pattern (mirrors useGoGame). Wrapped resign() to set resignedRef before store action. StatsPage: 4th tab 'backgammon', grid-cols-3→4, BACKGAMMON_END_REASON_KEYS map. Added i18n: stats.tabBackgammon, stats.endCompleted (EN+RU).
+- **Gates:** Build ✅ Lint ✅ Tests 182/182 ✅
+
+## [2026-04-26] — Backgammon Sprint 5: UI/UX
+- **Status:** COMPLETED
+- **What:** BackgammonTopBar (status chip + dice badges + Roll/Confirm/Undo/Resign/New/Rules/Settings buttons), BackgammonPlayerCard (color dot + born-off progress bar + isThinking pulse), BackgammonMoveHistory (reverse-chronological turns with dice + sub-move notation), BackgammonSettingsPanel (Framer Motion slide-in: game mode, player color, AI level, rules preset, custom rule toggles), BackgammonEndGameDialog (role=dialog, victory/defeat/mars/kokc, play-again + review), BackgammonPage rewritten as thin orchestrator mirroring GoPage. Also added shared src/core/hooks/useEscapeClose.ts, added 36 backgammon i18n keys (EN + RU).
+- **Gates:** Build ✅ Lint ✅ Tests 182/182 ✅
+
+## [2026-04-26] — Backgammon Sprint 4: AI (Expectimax)
+- **Status:** COMPLETED
+- **What:** backgammonWorker.ts (expectimax + chance nodes + budget-limited search), BackgammonAIService.ts (Promise wrapper, mirrors GoAIService), useBackgammonAI.ts (React hook: AI roll trigger + sub-move playback with visual pacing), useBackgammonGame.ts (facade hook, mounts AI, aggregates all state/actions), isAIThinking + setAIThinking added to useBackgammonStore, BackgammonPage refactored to use facade
+- **Gates:** Build ✅ Lint ✅ Tests 182/182 ✅
+- **Notes:** Worker uses BudgetExhausted sentinel class for safe early-exit; easy level adds 25% randomness from top-3 sequences; AI selects source via selectFrom() before executeSubMove() to satisfy store guard
+
 ## [2026-04-13] — Checkers: Phase 1 (Engine)
 - **Status:** COMPLETED
 - **What:** CheckersEngine class with Russian draughts rules, FEN, move gen, chains, undo, types
@@ -79,3 +117,39 @@
   - User preference captured: stats must be per-game (not shared across chess/checkers/go) — for future Stats sprint
   - Open tech debt: Go AI engine replacement (user flagged hand-written MCTS as inferior to Stockfish/minimax used in other games), per-game stats stores, clock implementation, persistence audit in chess/checkers
   - Build ✅ Lint ✅ Tests 58/58 ✅
+
+## [2026-04-19] — Backgammon Sprint 1: Engine + Rules
+- **Status:** COMPLETED
+- **What:** Pure-TS engine for Long Backgammon — types, path utils, dice, head/block/bear-off rules, move generator, evaluator, engine facade
+- **Files created:**
+  - `src/games/backgammon/config/variants.ts` — BackgammonRules + RULE_PRESETS (5 presets)
+  - `src/games/backgammon/config/aiLevels.ts` — AILevel + AI_LEVEL_CONFIG
+  - `src/games/backgammon/engine/types.ts` — all game types
+  - `src/games/backgammon/engine/constants.ts` — board constants + path arrays
+  - `src/games/backgammon/engine/pathUtils.ts` — path traversal, pip count, home detection
+  - `src/games/backgammon/engine/diceUtils.ts` — dice rolling, expansion, distribution
+  - `src/games/backgammon/engine/rules/headRule.ts` — head lifting limit with doubles exception
+  - `src/games/backgammon/engine/rules/blockRule.ts` — 6-block detection (3 modes)
+  - `src/games/backgammon/engine/rules/bearOffRule.ts` — bear-off eligibility and move validity
+  - `src/games/backgammon/engine/moveGenerator.ts` — DFS legal move generation with max-die filter
+  - `src/games/backgammon/engine/evaluator.ts` — AI heuristic features
+  - `src/games/backgammon/engine/BackgammonEngine.ts` — engine facade (pure functions)
+  - 6 test files with 124 tests
+- **Tests:** 124 new, all green. Total: 182/182
+- **Notes:** Build PASS, Lint PASS, Tests 182/182 PASS
+
+## [2026-04-26] — Backgammon Sprint 3: Dice Cup + Turn Flow
+- **Status:** COMPLETED
+- **What:** DicePip, Dice3D, DiceCup (interactive physics cup), DiceRoller, AnimatedStone, store Sprint 3 actions (rollDice, onDiceSettled, executeSubMove, undoLastSubMove, confirmTurn, resign), BackgammonPage functional UI (roll/confirm/undo/end-game), BackgammonScene click-to-move wiring with legal destination computation
+- **Files created:**
+  - `src/games/backgammon/components/scene/DicePip.tsx` — pip dot patterns on die faces
+  - `src/games/backgammon/components/scene/Dice3D.tsx` — Rapier RigidBody physics die with 6-face pips
+  - `src/games/backgammon/components/scene/DiceCup.tsx` — interactive leather cup (grab/shake/flip/settle/read)
+  - `src/games/backgammon/components/scene/DiceRoller.tsx` — Physics world orchestrator (board + tray colliders)
+  - `src/games/backgammon/components/scene/AnimatedStone.tsx` — lerp + parabolic-arc stone animation
+- **Files modified:**
+  - `src/games/backgammon/stores/useBackgammonStore.ts` — replaced 5 stubs with full Sprint 3 implementations
+  - `src/games/backgammon/components/scene/BackgammonScene.tsx` — DiceRoller wired, click-to-move with legal dest computation
+  - `src/pages/BackgammonPage.tsx` — functional UI overlay (status chip, roll/confirm/undo/end-game buttons)
+  - `src/core/i18n/translations.ts` — 14 new backgammon UI keys (EN+RU)
+- **Gates:** Build ✅ Lint ✅ Tests 182/182 ✅

@@ -35,7 +35,7 @@ export function useCheckersAI() {
   useEffect(() => {
     const service = new CheckersAIService();
     service.init();
-    service.setLevel(AI_LEVELS[aiLevel]);
+    service.setLevel(AI_LEVELS[aiLevel], aiLevel);
     serviceRef.current = service;
 
     return () => {
@@ -47,7 +47,7 @@ export function useCheckersAI() {
 
   // Update difficulty when changed
   useEffect(() => {
-    serviceRef.current?.setLevel(AI_LEVELS[aiLevel]);
+    serviceRef.current?.setLevel(AI_LEVELS[aiLevel], aiLevel);
   }, [aiLevel]);
 
   // Trigger AI move

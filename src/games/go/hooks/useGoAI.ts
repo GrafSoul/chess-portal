@@ -60,7 +60,7 @@ export function useGoAI() {
   useEffect(() => {
     const service = new GoAIService();
     service.init();
-    service.setLevel(GO_AI_LEVELS[aiLevel]);
+    service.setLevel(GO_AI_LEVELS[aiLevel], aiLevel);
     serviceRef.current = service;
 
     return () => {
@@ -72,7 +72,7 @@ export function useGoAI() {
 
   // Update difficulty when changed
   useEffect(() => {
-    serviceRef.current?.setLevel(GO_AI_LEVELS[aiLevel]);
+    serviceRef.current?.setLevel(GO_AI_LEVELS[aiLevel], aiLevel);
   }, [aiLevel]);
 
   // Trigger AI move

@@ -3,6 +3,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore } from '../../stores/useUIStore';
 import { useTranslation } from '../../i18n/useTranslation';
 import { ROUTES } from '../../types/common';
+import {
+  LazyHomePage,
+  LazyChessPage,
+  LazyCheckersPage,
+  LazyGoPage,
+  LazyBackgammonPage,
+  LazyStatsPage,
+} from '../../../pages/lazy';
+
+/** Map route paths to the corresponding lazy page's preloader. */
+const PRELOADERS: Record<string, () => Promise<unknown>> = {
+  [ROUTES.HOME]: LazyHomePage.preload,
+  [ROUTES.CHESS]: LazyChessPage.preload,
+  [ROUTES.CHECKERS]: LazyCheckersPage.preload,
+  [ROUTES.GO]: LazyGoPage.preload,
+  [ROUTES.BACKGAMMON]: LazyBackgammonPage.preload,
+  [ROUTES.STATS]: LazyStatsPage.preload,
+};
 
 const navItems = [
   {
@@ -45,6 +63,22 @@ const navItems = [
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
         <circle cx="12" cy="12" r="2.5" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
+    path: ROUTES.BACKGAMMON,
+    labelKey: 'nav.backgammon',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="2" width="9" height="9" rx="1.5" />
+        <rect x="13" y="2" width="9" height="9" rx="1.5" />
+        <circle cx="6.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+        <circle cx="17.5" cy="4.5" r="1" fill="currentColor" stroke="none" />
+        <circle cx="15.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+        <circle cx="17.5" cy="8.5" r="1" fill="currentColor" stroke="none" />
+        <circle cx="19.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+        <circle cx="15.5" cy="4.5" r="1" fill="currentColor" stroke="none" />
       </svg>
     ),
   },
@@ -115,6 +149,9 @@ export function Sidebar() {
           <NavLink
             key={item.path}
             to={item.path}
+            onMouseEnter={() => PRELOADERS[item.path]?.()}
+            onFocus={() => PRELOADERS[item.path]?.()}
+            onTouchStart={() => PRELOADERS[item.path]?.()}
             className={({ isActive }) =>
               `relative flex items-center gap-2.5 h-9 rounded-md transition-all duration-150
               ${sidebarOpen ? 'px-2.5' : 'justify-center'}

@@ -42,6 +42,8 @@ interface SearchRequest {
   snapshot: GoEngineJSON;
   timeBudgetMs: number;
   maxPlayouts: number;
+  /** AI difficulty level — controls tactical pre-search and rollout quality. */
+  level: string;
 }
 
 // ─── Board utilities ────────────────────────────────────────────────────────
@@ -567,8 +569,16 @@ function findBestSave(rootState: SimState, legal: number[]): number {
 
 // ─── MCTS ───────────────────────────────────────────────────────────────────
 
-/** Exploration constant for UCT. */
-const UCT_C = 1.41;
+/**
+ * UCT exploration constant per difficulty level.
+ * Higher value (1.6) on hard/expert encourages broader root exploration —
+ * critical on 19×19 where the best move can be far from the obvious candidate.
+ * Lower value (1.41) on easy/medium keeps the tree shallower and produces
+ * weaker, more random-looking play.
+ */
+function getUctC(level: string): number {
+  return level === 'hard' || level === 'expert' ? 1.6 : 1.41;
+}
 
 /** Maximum playout depth to prevent infinite games on large boards. */
 const MAX_PLAYOUT_DEPTH = 400;
@@ -619,21 +629,40 @@ function createNode(
   };
 }
 
-/** UCT score for child selection. */
-function uctScore(node: MCTSNode, parentVisits: number): number {
+/**
+ * UCT score for child selection.
+ *
+ * @param node        - Child node to score.
+ * @param parentVisits - Visit count of the parent node.
+ * @param uctC        - Exploration constant (level-dependent).
+ */
+function uctScore(node: MCTSNode, parentVisits: number, uctC: number): number {
   if (node.visits === 0) return Infinity;
-  return (node.wins / node.visits) + UCT_C * Math.sqrt(Math.log(parentVisits) / node.visits);
+  return (node.wins / node.visits) + uctC * Math.sqrt(Math.log(parentVisits) / node.visits);
 }
 
 /**
  * Run MCTS from the given snapshot and return the best move.
  *
+ * Behaviour is gated by `level`:
+ *
+ * | Level        | Pre-search              | Rollout quality          | Child selection         |
+ * |--------------|-------------------------|--------------------------|-------------------------|
+ * | easy         | none                    | pure random              | random top-3 (40%)      |
+ * | medium       | save-only               | tactical (captures+saves)| max visits              |
+ * | hard/expert  | capture + save          | tactical                 | max visits, UCT_C = 1.6 |
+ *
+ * @param snapshot     - Serialised engine state.
+ * @param timeBudgetMs - Wall-clock budget (ms).
+ * @param maxPlayouts  - Maximum MCTS iterations.
+ * @param level        - Difficulty level string.
  * @returns pointKey of best move, or -1 for pass.
  */
 function mctsSearch(
   snapshot: GoEngineJSON,
   timeBudgetMs: number,
   maxPlayouts: number,
+  level: string,
 ): number {
   const rootState = createSimState(snapshot);
   const rootLegal = getLegalMoveKeys(rootState);
@@ -643,16 +672,23 @@ function mctsSearch(
   // Only one legal move — play it immediately
   if (rootLegal.length === 1) return rootLegal[0];
 
-  // ── Root tactical pre-search ─────────────────────────────────────────────
-  // Avoids the "MCTS plays random on large boards with small budgets" problem:
-  // if there is an obvious capture or save, play it directly without spending
-  // any of the time budget on MCTS. This is what separates a competent-looking
-  // amateur from a random-noise bot.
-  const bestCapture = findBestCapture(rootState, rootLegal);
-  if (bestCapture !== -1) return bestCapture;
-  const bestSave = findBestSave(rootState, rootLegal);
-  if (bestSave !== -1) return bestSave;
+  // ── Root tactical pre-search (level-gated) ──────────────────────────────
+  //
+  // easy   → skip both (looks "human" — sometimes misses atari)
+  // medium → save-only (rescues own groups but doesn't always spot captures)
+  // hard+  → capture first, then save (full tactical awareness)
+  if (level === 'hard' || level === 'expert') {
+    const bestCapture = findBestCapture(rootState, rootLegal);
+    if (bestCapture !== -1) return bestCapture;
+    const bestSave = findBestSave(rootState, rootLegal);
+    if (bestSave !== -1) return bestSave;
+  } else if (level === 'medium') {
+    const bestSave = findBestSave(rootState, rootLegal);
+    if (bestSave !== -1) return bestSave;
+  }
+  // easy: no pre-search — let MCTS handle it with its small budget
 
+  const uctC = getUctC(level);
   const root = createNode(-1, null, [...rootLegal], rootState.turn);
   const startTime = performance.now();
   let playouts = 0;
@@ -669,11 +705,11 @@ function mctsSearch(
 
     // 1. SELECTION — descend tree via UCT until we reach a node with untried moves or a terminal
     while (node.untriedMoves.length === 0 && node.children.length > 0) {
-      // Pick child with best UCT
+      // Pick child with best UCT (uses level-specific exploration constant)
       let bestChild = node.children[0];
       let bestScore = -Infinity;
       for (const child of node.children) {
-        const score = uctScore(child, node.visits);
+        const score = uctScore(child, node.visits, uctC);
         if (score > bestScore) {
           bestScore = score;
           bestChild = child;
@@ -720,17 +756,17 @@ function mctsSearch(
       node = child;
     }
 
-    // 3. SIMULATION — tactical rollout with eye-filling avoidance.
+    // 3. SIMULATION (level-gated rollout quality)
     //
-    // Priority order (first non-empty list wins):
-    //   1. Capture moves  — fill the last liberty of an opponent group
-    //   2. Save moves     — extend/rescue a friendly group in atari
-    //   3. Non-eye moves  — random legal play excluding own eye-fills
-    //   4. Any legal move — fallback (eye-fills allowed if pool is otherwise empty)
+    // easy   → pure random selection; no eye filter, no capture/save priority.
+    //          Produces clearly weaker play — misses atari, fills own eyes.
     //
-    // This turns the AI from a purely random player into one that reliably
-    // captures stones in atari and defends its own groups — the single biggest
-    // quality gap between a random rollout and a real player.
+    // medium+ → tactical rollout:
+    //   Priority order (first non-empty list wins):
+    //     1. Capture moves  — fill the last liberty of an opponent group
+    //     2. Save moves     — extend/rescue a friendly group in atari
+    //     3. Non-eye moves  — random legal play excluding own eye-fills
+    //     4. Any legal move — fallback
     let depth = 0;
     while (!state.ended && depth < MAX_PLAYOUT_DEPTH) {
       const legal = getLegalMoveKeys(state);
@@ -740,27 +776,35 @@ function mctsSearch(
         continue;
       }
 
-      const color = state.turn;
+      let moveKey: number;
 
-      // Remove own single-point eye-fills first (baseline quality improvement).
-      const nonEye = legal.filter((k) => {
-        const kx = k % 64;
-        const ky = (k - kx) / 64;
-        return !isSinglePointEye(state.board, state.size, kx, ky, color);
-      });
-      const candidates = nonEye.length > 0 ? nonEye : legal;
-
-      // Tactical selection: check captures, then saves, then random.
-      const captures = filterCaptureMoves(state.board, state.size, candidates, color);
-      let pool: number[];
-      if (captures.length > 0) {
-        pool = captures;
+      if (level === 'easy') {
+        // Pure random — no filtering whatsoever
+        moveKey = legal[Math.floor(Math.random() * legal.length)];
       } else {
-        const saves = filterSaveMoves(state.board, state.size, candidates, color);
-        pool = saves.length > 0 ? saves : candidates;
+        // Tactical rollout (medium / hard / expert)
+        const color = state.turn;
+
+        // Remove own single-point eye-fills (baseline quality improvement).
+        const nonEye = legal.filter((k) => {
+          const kx = k % 64;
+          const ky = (k - kx) / 64;
+          return !isSinglePointEye(state.board, state.size, kx, ky, color);
+        });
+        const candidates = nonEye.length > 0 ? nonEye : legal;
+
+        // Tactical selection: captures → saves → random.
+        const captures = filterCaptureMoves(state.board, state.size, candidates, color);
+        let pool: number[];
+        if (captures.length > 0) {
+          pool = captures;
+        } else {
+          const saves = filterSaveMoves(state.board, state.size, candidates, color);
+          pool = saves.length > 0 ? saves : candidates;
+        }
+        moveKey = pool[Math.floor(Math.random() * pool.length)];
       }
 
-      const moveKey = pool[Math.floor(Math.random() * pool.length)];
       const mx = moveKey % 64;
       const my = (moveKey - mx) / 64;
       if (!simPlay(state, mx, my)) {
@@ -769,20 +813,18 @@ function mctsSearch(
       depth++;
     }
 
-    // 4. BACKPROPAGATION
-    // Score from Black's perspective
+    // 4. BACKPROPAGATION — score from Black's perspective
     const blackScore = chineseScore(state, snapshot.komi);
     let current: MCTSNode | null = node;
     while (current !== null) {
       current.visits++;
-      // The node's parent played the move that led to this node.
-      // `current.turn` is who moves from this node.
-      // So the player who MOVED to get here is `opposite(current.turn)`.
+      // `current.turn` is who moves FROM this node → the player who MOVED
+      // to reach it is `opposite(current.turn)`.
       const mover = opposite(current.turn);
       if ((mover === 'b' && blackScore > 0) || (mover === 'w' && blackScore < 0)) {
         current.wins++;
       } else if (blackScore === 0) {
-        current.wins += 0.5; // Draw (unlikely with komi but handle it)
+        current.wins += 0.5; // Draw (rare with komi, handled defensively)
       }
       current = current.parent;
     }
@@ -790,21 +832,37 @@ function mctsSearch(
     playouts++;
   }
 
-  // Pick the root child with the most visits (robust selection)
-  let bestChild: MCTSNode | null = null;
-  let bestVisits = -1;
-  for (const child of root.children) {
-    if (child.visits > bestVisits) {
-      bestVisits = child.visits;
-      bestChild = child;
+  // ── Child selection ──────────────────────────────────────────────────────
+  //
+  // easy   → 40% chance of picking randomly from top-3 by visits (temperature).
+  //          Introduces obvious "blunders" that feel natural and encourage the
+  //          human player — the AI doesn't always pick the objectively best move.
+  //
+  // medium+ → robust selection: always pick the child with the most visits.
+  let result: number;
+
+  if (root.children.length === 0) {
+    result = -1;
+  } else if (level === 'easy' && root.children.length > 1 && Math.random() < 0.40) {
+    // Sort children by visits descending, pick randomly from top-3
+    const sorted = [...root.children].sort((a, b) => b.visits - a.visits);
+    const topN = Math.min(3, sorted.length);
+    result = sorted[Math.floor(Math.random() * topN)].moveKey;
+  } else {
+    // Robust selection: max visits
+    let bestChild = root.children[0];
+    let bestVisits = -1;
+    for (const child of root.children) {
+      if (child.visits > bestVisits) {
+        bestVisits = child.visits;
+        bestChild = child;
+      }
     }
+    result = bestChild.moveKey;
   }
 
-  const result = bestChild ? bestChild.moveKey : -1;
-
-  // Explicitly break parent references so GC can collect the tree
-  // promptly — at expert level the tree can have hundreds of thousands
-  // of nodes and we don't want them lingering until the next search.
+  // Break parent references so GC can collect the tree promptly — at expert
+  // level the tree can have hundreds of thousands of nodes.
   freeTree(root);
 
   return result;
@@ -832,11 +890,11 @@ function freeTree(node: MCTSNode): void {
  * - `{ type: 'error', message: string }` — uncaught exception inside MCTS.
  */
 self.onmessage = (e: MessageEvent<SearchRequest>) => {
-  const { type, snapshot, timeBudgetMs, maxPlayouts } = e.data;
+  const { type, snapshot, timeBudgetMs, maxPlayouts, level } = e.data;
   if (type !== 'search') return;
 
   try {
-    const moveKey = mctsSearch(snapshot, timeBudgetMs, maxPlayouts);
+    const moveKey = mctsSearch(snapshot, timeBudgetMs, maxPlayouts, level ?? 'medium');
     if (moveKey === -1) {
       self.postMessage({ type: 'pass' });
     } else {

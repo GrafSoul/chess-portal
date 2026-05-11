@@ -10,6 +10,7 @@ export const ROUTES = {
   CHESS: '/chess',
   CHECKERS: '/checkers',
   GO: '/go',
+  BACKGAMMON: '/backgammon',
   STATS: '/stats',
 } as const;
 

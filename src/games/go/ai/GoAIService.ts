@@ -59,6 +59,8 @@ export class GoAIService {
   private worker: Worker | null = null;
   private timeBudgetMs = 1500;
   private maxPlayouts = 5000;
+  /** Difficulty level name forwarded to the worker for behavioural gating. */
+  private level = 'medium';
   private currentResolver: ((move: GoAIMove) => void) | null = null;
   private currentRejecter: ((err: Error) => void) | null = null;
 
@@ -85,16 +87,19 @@ export class GoAIService {
    * Takes effect on the next `getBestMove` call — does not interrupt an
    * in-flight search.
    *
-   * @param config - Time budget and playout cap from `GO_AI_LEVELS`.
+   * @param config    - Time budget and playout cap from `GO_AI_LEVELS`.
+   * @param levelName - Raw level key (e.g. `'easy'`, `'hard'`) forwarded to the
+   *                    worker to gate tactical pre-search and rollout behaviour.
    *
    * @example
    * ```ts
-   * service.setLevel(GO_AI_LEVELS['hard']); // ~3 s, 10 000 playouts
+   * service.setLevel(GO_AI_LEVELS['hard'], 'hard'); // ~3 s, 10 000 playouts
    * ```
    */
-  setLevel(config: AILevelConfig): void {
+  setLevel(config: AILevelConfig, levelName = 'medium'): void {
     this.timeBudgetMs = config.timeBudgetMs;
     this.maxPlayouts = config.maxPlayouts;
+    this.level = levelName;
   }
 
   /**
@@ -141,6 +146,7 @@ export class GoAIService {
         snapshot,
         timeBudgetMs: this.timeBudgetMs,
         maxPlayouts: this.maxPlayouts,
+        level: this.level,
       });
     });
   }

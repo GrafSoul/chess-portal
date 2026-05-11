@@ -47,6 +47,25 @@ const games = [
     route: ROUTES.GO,
     available: true,
   },
+  {
+    id: 'backgammon',
+    titleKey: 'home.backgammon.title',
+    descriptionKey: 'home.backgammon.description',
+    icon: (
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="2" width="9" height="9" rx="1.5" />
+        <rect x="13" y="2" width="9" height="9" rx="1.5" />
+        <circle cx="6.5" cy="6.5" r="1.1" fill="currentColor" stroke="none" />
+        <circle cx="17.5" cy="4.5" r="1.1" fill="currentColor" stroke="none" />
+        <circle cx="15.5" cy="6.5" r="1.1" fill="currentColor" stroke="none" />
+        <circle cx="17.5" cy="8.5" r="1.1" fill="currentColor" stroke="none" />
+        <circle cx="19.5" cy="6.5" r="1.1" fill="currentColor" stroke="none" />
+        <circle cx="15.5" cy="4.5" r="1.1" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+    route: ROUTES.BACKGAMMON,
+    available: true,
+  },
 ] as const;
 
 /** Game portal landing page */

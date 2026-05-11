@@ -20,6 +20,8 @@ export class CheckersAIService {
   private worker: Worker | null = null;
   private depth = 4;
   private delayMs = 200;
+  /** Difficulty level name forwarded to the worker for behavioural gating. */
+  private level = 'medium';
   private currentResolver: ((move: CheckersAIMove) => void) | null = null;
   private currentRejecter: ((err: Error) => void) | null = null;
 
@@ -32,10 +34,16 @@ export class CheckersAIService {
     this.worker.addEventListener('message', this.handleMessage);
   }
 
-  /** Set difficulty parameters */
-  setLevel(config: CheckersAIConfig): void {
+  /**
+   * Update difficulty parameters for subsequent searches.
+   *
+   * @param config    - Depth and delay from `AI_LEVELS`.
+   * @param levelName - Raw level key forwarded to the worker for behavioural gating.
+   */
+  setLevel(config: CheckersAIConfig, levelName = 'medium'): void {
     this.depth = config.depth;
     this.delayMs = config.delayMs;
+    this.level = levelName;
   }
 
   /** Request the best move for the given FEN position */
@@ -57,7 +65,7 @@ export class CheckersAIService {
 
       // Add artificial delay for lower difficulties
       const sendSearch = () => {
-        this.worker?.postMessage({ type: 'search', fen, depth: this.depth });
+        this.worker?.postMessage({ type: 'search', fen, depth: this.depth, level: this.level });
       };
 
       if (this.delayMs > 0) {

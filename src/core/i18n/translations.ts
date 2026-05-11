@@ -180,6 +180,62 @@ const en: TranslationDict = {
   'goRules.ch.strategy.body':
     'Key principles for beginners:\n\n1. Corners first — it takes fewer stones to secure territory in corners.\n2. Then edges — sides are the next most efficient.\n3. Center last — the hardest place to hold territory.\n\nProtect your "eyes" — a group with two separate internal spaces (eyes) can never be captured.\n\nDon\'t try to save every stone — sometimes sacrificing stones gains you more territory elsewhere.',
 
+  // Backgammon
+  'nav.backgammon': 'Backgammon',
+  'home.backgammon.title': 'Backgammon',
+  'home.backgammon.description': 'Classic long backgammon',
+  'backgammon.whiteToMove': 'White to move',
+  'backgammon.blackToMove': 'Black to move',
+  'backgammon.newGame': 'New game',
+  'backgammon.resetConfirm': 'Start a new game?',
+  'backgammon.roll': 'Roll dice',
+  'backgammon.confirm': 'Confirm move',
+  'backgammon.undo': '↩ Undo',
+  'backgammon.rolling': 'Rolling…',
+  'backgammon.yourTurn': 'Your turn',
+  'backgammon.opponentTurn': "Opponent's turn",
+  'backgammon.victory': 'Victory!',
+  'backgammon.defeat': 'Defeat',
+  'backgammon.mars': 'Mars!',
+  'backgammon.playAgain': 'Play again',
+  'backgammon.you': 'You',
+  'backgammon.ai': 'AI',
+  'backgammon.white': 'White',
+  'backgammon.black': 'Black',
+  'backgammon.aiThinking': 'Thinking…',
+  'backgammon.choosePiece': 'Click a piece to move',
+  'backgammon.resign': 'Resign',
+  'backgammon.rules': 'Rules',
+  'backgammon.review': 'Review board',
+  'backgammon.bornOff': 'Born off',
+  'backgammon.moveHistory': 'History',
+  'backgammon.noMoves': 'No moves yet',
+  'backgammon.settingsTitle': 'Settings',
+  'backgammon.gameMode': 'Game mode',
+  'backgammon.modeAI': 'vs AI',
+  'backgammon.modeLocal': '2 players',
+  'backgammon.playerColor': 'Your color',
+  'backgammon.aiLevel': 'AI level',
+  'backgammon.levelEasy': 'Easy',
+  'backgammon.levelMedium': 'Medium',
+  'backgammon.levelHard': 'Hard',
+  'backgammon.rulesPreset': 'Rules preset',
+  'backgammon.presetClassic': 'Classic',
+  'backgammon.presetStrict': 'Strict',
+  'backgammon.presetRelaxed': 'Relaxed',
+  'backgammon.presetCaucasian': 'Caucasian',
+  'backgammon.presetCustom': 'Custom',
+  'backgammon.applyNewGame': 'Apply & New Game',
+  'backgammon.headException': 'Head exception on first doubles',
+  'backgammon.sixBlockRule': 'Six-block rule',
+  'backgammon.blockClassical': 'Classical',
+  'backgammon.blockAlwaysAllowed': 'Always allowed',
+  'backgammon.blockAlwaysForbidden': 'Always forbidden',
+  'backgammon.enableKokc': 'Kokc (triple win)',
+  'backgammon.firstMoveByDice': 'First move by dice roll',
+  'backgammon.strictMaxDie': 'Must use larger die when forced',
+  'backgammon.kokc': 'Kokc!',
+
   // Checkers game
   'checkers.readyToPlay': 'Ready to play',
   'checkers.whiteWins': 'White wins!',
@@ -200,7 +256,7 @@ const en: TranslationDict = {
   'home.checkers.title': 'Checkers',
   'home.checkers.description': 'Russian draughts with AI opponent in a 3D environment',
   'home.go.title': 'Go',
-  'home.go.description': 'Ancient strategy game on a 19x19 board',
+  'home.go.description': 'Ancient strategy game on a 9×9 or 19×19 board',
 
   // Stats page
   'stats.title': 'Statistics',
@@ -225,10 +281,12 @@ const en: TranslationDict = {
   'stats.endTimeout': 'timeout',
   'stats.endNoMoves': 'no moves',
   'stats.endPassed': 'two passes',
+  'stats.endCompleted': 'bear-off',
   'stats.movesLabel': 'moves',
   'stats.tabChess': 'Chess',
   'stats.tabCheckers': 'Checkers',
   'stats.tabGo': 'Go',
+  'stats.tabBackgammon': 'Nardi',
 
   // Rules / Tutorial panel
   'rules.title': 'Rules of Chess',
@@ -278,6 +336,53 @@ const en: TranslationDict = {
   'rules.ch.sampleGame.title': "Sample Game: Scholar's Mate",
   'rules.ch.sampleGame.body':
     "A classic short game every beginner should know — both to play and to defend against. White targets the weak f7-square and delivers mate in just four moves: 1. e4 e5 2. Bc4 Nc6 3. Qh5 Nf6?? 4. Qxf7#. The lesson: always watch for threats against f7 (or f2)!",
+
+  // Backgammon Rules / Tutorial panel
+  'backgammonRules.title': 'Rules of Long Backgammon',
+  'backgammonRules.close': 'Close rules',
+  'backgammonRules.chapter': 'Chapter',
+  'backgammonRules.prev': 'Previous',
+  'backgammonRules.next': 'Next',
+
+  'backgammonRules.ch.board.title': 'The Board',
+  'backgammonRules.ch.board.body':
+    "Long Backgammon (Dlinnye nardy) is played on a board with 24 points arranged in a ring.\n\nThe board is divided into four quadrants of 6 points each:\n- White's home (points 0-5) - bottom-right\n- White's outer (points 6-11)\n- Black's outer (points 12-17)\n- Black's home (points 18-23)\n\nBoth players have 15 checkers. The goal is to move all your checkers around the ring and bear them off before your opponent.",
+
+  'backgammonRules.ch.setup.title': 'Starting Setup',
+  'backgammonRules.ch.setup.body':
+    "At the start, all 15 white checkers are stacked on point 23 (White Head), and all 15 black checkers are stacked on point 11 (Black Head).\n\nBoth players move their checkers counter-clockwise around the board — from their head, through the opponent's home, through the outer quadrants, and into their own home.",
+
+  'backgammonRules.ch.movement.title': 'Movement Direction',
+  'backgammonRules.ch.movement.body':
+    'White moves from point 23 → 0 (counter-clockwise, decreasing indices).\nBlack moves from point 11 → 0, then wraps: 23 → 12 (also counter-clockwise).\n\nOn your turn you roll two dice. Each die moves one checker that many points forward. You must use both dice if legally possible. With doubles, you get four moves of that value instead of two.',
+
+  'backgammonRules.ch.dice.title': 'Using the Dice',
+  'backgammonRules.ch.dice.body':
+    'You roll two dice. Each die value is one sub-move — move one checker by that many points.\n\nYou can use both values on the same checker or on two different checkers. Doubles give four moves of that value.\n\nYou must use as many dice as legally possible. If only one die can be played, you must play the larger value if it is playable, otherwise the smaller one.',
+
+  'backgammonRules.ch.nohit.title': 'One Color Per Point',
+  'backgammonRules.ch.nohit.body':
+    'Unlike Western backgammon, Long Backgammon has NO hitting.\n\nA point occupied by even one opponent checker is completely blocked — you cannot land on it.\n\nThis means your strategy is about building primes (rows of occupied points) to slow the opponent, not about hitting single blots.',
+
+  'backgammonRules.ch.head.title': 'The Head Rule',
+  'backgammonRules.ch.head.body':
+    'On any turn, you may move only ONE checker off your head (the starting point: 23 for white, 11 for black).\n\nException: on the very first move of the game, if your dice result requires it, you may move TWO checkers off the head.',
+
+  'backgammonRules.ch.blocking.title': 'The Blocking Rule',
+  'backgammonRules.ch.blocking.body':
+    "You may never form a continuous block of 6 or more points if doing so would completely trap all of your opponent's checkers behind it — i.e., none of their checkers have yet passed your 6-block.\n\nA prime of 6 is legal as long as at least one opponent checker is already on the other side of it.",
+
+  'backgammonRules.ch.bearoff.title': 'Bearing Off',
+  'backgammonRules.ch.bearoff.body':
+    'Once all 15 of your checkers have entered your home quadrant (points 0–5 for white, 18–23 for black), you may start bearing off.\n\nTo bear off, roll a die and remove a checker from the corresponding point. If the exact point is empty, you must move a checker from a higher point (if possible) or remove from the highest occupied point.',
+
+  'backgammonRules.ch.winning.title': 'Winning & Scoring',
+  'backgammonRules.ch.winning.body':
+    'The first player to bear off all 15 checkers wins.\n\nIf the loser has not borne off a single checker, the winner scores a Mars (double points).\n\nKokc (triple score) applies if the loser has no checkers in their home AND the winner has already borne some off — check your settings for the exact variant in use.',
+
+  'backgammonRules.ch.strategy.title': 'Basic Strategy',
+  'backgammonRules.ch.strategy.body':
+    "Key principles for Long Backgammon:\n\n1) Race efficiently — move checkers out of the head early and spread them across the board.\n2) Build primes — a row of blocked points near the opponent's path slows their progress significantly.\n3) Timing — don't race ahead so fast that you create a 6-block before the opponent has passed it (illegal).\n4) Bear off cleanly — keep your home board balanced so you can use any dice result.\n5) Watch for Mars — if you're far ahead, play for a double-score win.",
 
   // Checkers Rules / Tutorial panel
   'checkersRules.title': 'Rules of Checkers',
@@ -494,6 +599,62 @@ const ru: TranslationDict = {
   'goRules.ch.strategy.body':
     'Ключевые принципы для начинающих:\n\n1. Сначала углы — для захвата территории в углах нужно меньше камней.\n2. Затем края — стороны доски следующие по эффективности.\n3. Центр в последнюю очередь — там сложнее всего удержать территорию.\n\nЗащищайте свои «глаза» — группа с двумя отдельными внутренними пространствами (глазами) не может быть захвачена.\n\nНе пытайтесь спасти каждый камень — иногда жертва камней приносит больше территории в другом месте.',
 
+  // Backgammon
+  'nav.backgammon': 'Нарды',
+  'home.backgammon.title': 'Нарды',
+  'home.backgammon.description': 'Классические длинные нарды',
+  'backgammon.whiteToMove': 'Ход белых',
+  'backgammon.blackToMove': 'Ход чёрных',
+  'backgammon.newGame': 'Новая партия',
+  'backgammon.resetConfirm': 'Начать новую партию?',
+  'backgammon.roll': 'Бросить кубики',
+  'backgammon.confirm': 'Завершить ход',
+  'backgammon.undo': '↩ Отмена',
+  'backgammon.rolling': 'Бросок…',
+  'backgammon.yourTurn': 'Ваш ход',
+  'backgammon.opponentTurn': 'Ход соперника',
+  'backgammon.victory': 'Победа!',
+  'backgammon.defeat': 'Поражение',
+  'backgammon.mars': 'Марс!',
+  'backgammon.playAgain': 'Новая партия',
+  'backgammon.you': 'Вы',
+  'backgammon.ai': 'ИИ',
+  'backgammon.white': 'Белые',
+  'backgammon.black': 'Чёрные',
+  'backgammon.aiThinking': 'Думаю…',
+  'backgammon.choosePiece': 'Нажмите на фишку для хода',
+  'backgammon.resign': 'Сдаться',
+  'backgammon.rules': 'Правила',
+  'backgammon.review': 'Посмотреть доску',
+  'backgammon.bornOff': 'Выбито',
+  'backgammon.moveHistory': 'История',
+  'backgammon.noMoves': 'Ходов пока нет',
+  'backgammon.settingsTitle': 'Настройки',
+  'backgammon.gameMode': 'Режим игры',
+  'backgammon.modeAI': 'Против ИИ',
+  'backgammon.modeLocal': '2 игрока',
+  'backgammon.playerColor': 'Ваш цвет',
+  'backgammon.aiLevel': 'Уровень ИИ',
+  'backgammon.levelEasy': 'Новичок',
+  'backgammon.levelMedium': 'Любитель',
+  'backgammon.levelHard': 'Мастер',
+  'backgammon.rulesPreset': 'Правила',
+  'backgammon.presetClassic': 'Классика',
+  'backgammon.presetStrict': 'Строгие',
+  'backgammon.presetRelaxed': 'Мягкие',
+  'backgammon.presetCaucasian': 'Кавказские',
+  'backgammon.presetCustom': 'Пользовательские',
+  'backgammon.applyNewGame': 'Применить и начать',
+  'backgammon.headException': 'Исключение заставы при первом дубле',
+  'backgammon.sixBlockRule': 'Правило шести',
+  'backgammon.blockClassical': 'Классическое',
+  'backgammon.blockAlwaysAllowed': 'Всегда разрешено',
+  'backgammon.blockAlwaysForbidden': 'Всегда запрещено',
+  'backgammon.enableKokc': 'Коц (тройной выигрыш)',
+  'backgammon.firstMoveByDice': 'Право первого хода по кубику',
+  'backgammon.strictMaxDie': 'Обязательное правило большего кубика',
+  'backgammon.kokc': 'Коц!',
+
   // Checkers game
   'checkers.readyToPlay': 'Готов к игре',
   'checkers.whiteWins': 'Победили белые!',
@@ -514,7 +675,7 @@ const ru: TranslationDict = {
   'home.checkers.title': 'Шашки',
   'home.checkers.description': 'Русские шашки с ИИ-противником в 3D-окружении',
   'home.go.title': 'Го',
-  'home.go.description': 'Древняя стратегическая игра на доске 19×19',
+  'home.go.description': 'Древняя стратегическая игра на доске 9×9 или 19×19',
 
   // Stats page
   'stats.title': 'Статистика',
@@ -539,10 +700,12 @@ const ru: TranslationDict = {
   'stats.endTimeout': 'время',
   'stats.endNoMoves': 'нет ходов',
   'stats.endPassed': 'два паса',
+  'stats.endCompleted': 'выбивание',
   'stats.movesLabel': 'ходов',
   'stats.tabChess': 'Шахматы',
   'stats.tabCheckers': 'Шашки',
   'stats.tabGo': 'Го',
+  'stats.tabBackgammon': 'Нарды',
 
   // Rules / Tutorial panel
   'rules.title': 'Правила шахмат',
@@ -592,6 +755,53 @@ const ru: TranslationDict = {
   'rules.ch.sampleGame.title': 'Пример: детский мат',
   'rules.ch.sampleGame.body':
     'Классическая короткая партия, которую должен знать каждый новичок — и чтобы сыграть, и чтобы не попасться. Белые атакуют слабое поле f7 и ставят мат в четыре хода: 1. e4 e5 2. Сc4 Кc6 3. Фh5 Кf6?? 4. Ф:f7#. Урок: всегда следите за угрозами по полю f7 (или f2)!',
+
+  // Backgammon Rules / Tutorial panel
+  'backgammonRules.title': 'Правила длинных нард',
+  'backgammonRules.close': 'Закрыть правила',
+  'backgammonRules.chapter': 'Глава',
+  'backgammonRules.prev': 'Назад',
+  'backgammonRules.next': 'Далее',
+
+  'backgammonRules.ch.board.title': 'Доска',
+  'backgammonRules.ch.board.body':
+    'Длинные нарды играются на доске с 24 пунктами, расположенными по кругу.\n\nДоска делится на четыре квадранта по 6 пунктов:\n• Дом белых (пункты 0–5) — правый нижний\n• Внешний стол белых (пункты 6–11)\n• Внешний стол чёрных (пункты 12–17)\n• Дом чёрных (пункты 18–23)\n\nУ каждого игрока 15 шашек. Цель — провести все шашки вокруг доски и вывести их за борт раньше соперника.',
+
+  'backgammonRules.ch.setup.title': 'Начальная расстановка',
+  'backgammonRules.ch.setup.body':
+    'В начале игры все 15 белых шашек стоят на пункте 23 (голова белых), а все 15 чёрных — на пункте 11 (голова чёрных).\n\nОба игрока двигают шашки против часовой стрелки: от головы через дом соперника, через внешний стол и в свой дом.',
+
+  'backgammonRules.ch.movement.title': 'Направление движения',
+  'backgammonRules.ch.movement.body':
+    'Белые движутся с пункта 23 → 0 (против часовой стрелки, убывающие индексы).\nЧёрные движутся с пункта 11 → 0, затем переходят: 23 → 12 (тоже против часовой стрелки).\n\nВ свой ход вы бросаете два кубика. Каждый кубик — один ход одной шашки на соответствующее количество пунктов. Оба кубика нужно использовать, если это возможно. При дублях вы делаете четыре хода вместо двух.',
+
+  'backgammonRules.ch.dice.title': 'Использование кубиков',
+  'backgammonRules.ch.dice.body':
+    'Вы бросаете два кубика. Каждое выпавшее число — один под-ход: передвиньте одну шашку на столько пунктов вперёд.\n\nМожно использовать оба числа для одной шашки или для двух разных. При дублях выполняются четыре хода с одинаковым значением.\n\nВы обязаны использовать как можно больше кубиков. Если можно сыграть только один — играйте больший, а если он недоступен — меньший.',
+
+  'backgammonRules.ch.nohit.title': 'Один цвет на пункте',
+  'backgammonRules.ch.nohit.body':
+    'В отличие от коротких нард, в длинных нардах нет рубки шашек.\n\nПункт, занятый даже одной шашкой соперника, полностью закрыт — вы не можете на него встать.\n\nВся стратегия строится на создании «баров» (заборов из закрытых пунктов), замедляющих соперника, а не на сбивании шашек.',
+
+  'backgammonRules.ch.head.title': 'Правило головы',
+  'backgammonRules.ch.head.body':
+    'За один ход разрешается снять с головы (стартовый пункт: 23 для белых, 11 для чёрных) только ОДНУ шашку.\n\nИсключение: в самый первый ход партии при выпадении дубля, требующего двух шашек с головы, разрешается снять две.',
+
+  'backgammonRules.ch.blocking.title': 'Правило блокировки',
+  'backgammonRules.ch.blocking.body':
+    'Запрещено строить непрерывный забор из 6 и более пунктов, если он полностью отрезает все шашки соперника — то есть ни одна из них ещё не прошла за этот забор.\n\nЗабор из 6 пунктов разрешён, если хотя бы одна шашка соперника уже находится по другую сторону от него.',
+
+  'backgammonRules.ch.bearoff.title': 'Выбрасывание с доски',
+  'backgammonRules.ch.bearoff.body':
+    'Как только все 15 ваших шашек попали в ваш дом (пункты 0–5 для белых, 18–23 для чёрных), можно начинать выбрасывание.\n\nДля выбрасывания бросьте кубики и снимайте шашку с соответствующего пункта. Если нужного пункта нет, двигайте шашку с более дальнего пункта или снимайте с наибольшего занятого.',
+
+  'backgammonRules.ch.winning.title': 'Победа и счёт',
+  'backgammonRules.ch.winning.body':
+    'Побеждает тот, кто первым выбросит все 15 шашек с доски.\n\nЕсли проигравший не выбросил ни одной шашки — это Марс (двойной счёт).\n\nКоц (тройной счёт) засчитывается, если у проигравшего нет шашек в своём доме, а победитель уже часть выбросил — уточните в настройках, какой вариант правил используется.',
+
+  'backgammonRules.ch.strategy.title': 'Основы стратегии',
+  'backgammonRules.ch.strategy.body':
+    'Ключевые принципы длинных нард:\n\n1) Гоните вперёд — снимайте шашки с головы как можно раньше и распределяйте их по доске.\n2) Стройте заборы — ряд закрытых пунктов на пути соперника сильно тормозит его движение.\n3) Считайте темп — не уходите так далеко вперёд, чтобы забор из 6 пунктов отрезал все шашки соперника (это запрещено).\n4) Выбрасывайте эффективно — держите дом сбалансированным, чтобы использовать любой результат кубика.\n5) Играйте на Марс — если вы сильно опережаете соперника, стремитесь к двойному счёту.',
 
   // Checkers Rules / Tutorial panel
   'checkersRules.title': 'Правила шашек',

@@ -336,8 +336,22 @@ function minimax(
   }
 }
 
-/** Find the best move for the given position */
-function findBestMove(fen: string, depth: number): { from: string; to: string } | null {
+/**
+ * Find the best move for the given position.
+ *
+ * Behaviour differs by difficulty level:
+ * - **easy**   — evaluates all root moves (no root pruning) then with 30 %
+ *                probability picks randomly from the top-3 scored moves,
+ *                simulating natural "beginner mistakes".
+ * - **medium** — standard alpha-beta, always picks the best move.
+ * - **hard / expert** — same as medium (depth is higher, set by aiLevels config).
+ *
+ * @param fen   - Current board in FEN notation.
+ * @param depth - Minimax search depth.
+ * @param level - Difficulty level string forwarded from the main thread.
+ * @returns Best move as `{ from, to }` in algebraic notation, or `null` when no moves exist.
+ */
+function findBestMove(fen: string, depth: number, level = 'medium'): { from: string; to: string } | null {
   const { board, turn } = parseFen(fen);
   const moves = generateMoves(board, turn);
 
@@ -351,9 +365,7 @@ function findBestMove(fen: string, depth: number): { from: string; to: string } 
     };
   }
 
-  let bestMove = moves[0];
   const isMaximizing = turn === 'w';
-  let bestVal = isMaximizing ? -Infinity : Infinity;
 
   // Move ordering: prioritize captures, then crowned moves
   moves.sort((a, b) => {
@@ -362,37 +374,46 @@ function findBestMove(fen: string, depth: number): { from: string; to: string } 
     return bScore - aScore;
   });
 
-  // Propagate alpha/beta across root moves for better pruning
-  let alpha = -Infinity;
-  let beta = Infinity;
+  // Evaluate all root moves. We intentionally do NOT propagate alpha-beta
+  // cuts across root moves so that we always have a score for every candidate
+  // (needed for top-3 randomization on easy). With depth ≤ 2 and at most
+  // ~20 root moves this is negligible overhead; at depth ≥ 4 (medium+)
+  // the sub-tree cost dominates anyway.
+  const scored: Array<{ move: Move; val: number }> = [];
 
   for (const move of moves) {
     const clone = cloneBoard(board);
     const nextColor = applyMove(clone, move, turn);
-    const val = minimax(clone, depth - 1, alpha, beta, nextColor);
+    const val = minimax(clone, depth - 1, -Infinity, Infinity, nextColor);
+    scored.push({ move, val });
+  }
 
-    if (isMaximizing) {
-      if (val > bestVal) { bestVal = val; bestMove = move; }
-      alpha = Math.max(alpha, val);
-    } else {
-      if (val < bestVal) { bestVal = val; bestMove = move; }
-      beta = Math.min(beta, val);
-    }
+  // Sort best-first for the current player
+  scored.sort((a, b) => isMaximizing ? b.val - a.val : a.val - b.val);
+
+  // Easy: 30 % chance to pick randomly from the top-3 — introduces natural
+  // blunders that make the beginner AI feel human without being purely random.
+  let chosen: Move;
+  if (level === 'easy' && scored.length > 1 && Math.random() < 0.30) {
+    const topN = Math.min(3, scored.length);
+    chosen = scored[Math.floor(Math.random() * topN)].move;
+  } else {
+    chosen = scored[0].move;
   }
 
   return {
-    from: String.fromCharCode(97 + bestMove.from[1]) + (bestMove.from[0] + 1),
-    to: String.fromCharCode(97 + bestMove.to[1]) + (bestMove.to[0] + 1),
+    from: String.fromCharCode(97 + chosen.from[1]) + (chosen.from[0] + 1),
+    to: String.fromCharCode(97 + chosen.to[1]) + (chosen.to[0] + 1),
   };
 }
 
 // ─── Worker message handler ──────────────────────────────────────────────────
 
 self.onmessage = (e: MessageEvent) => {
-  const { type, fen, depth } = e.data;
+  const { type, fen, depth, level } = e.data;
   if (type === 'search') {
     try {
-      const result = findBestMove(fen, depth);
+      const result = findBestMove(fen, depth, level ?? 'medium');
       if (result) {
         self.postMessage({ type: 'bestmove', from: result.from, to: result.to });
       } else {
