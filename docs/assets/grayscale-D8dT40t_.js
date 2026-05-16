@@ -1,0 +1,1 @@
+function e(e){let t=Math.round(Math.max(0,Math.min(100,e))/100*255).toString(16).padStart(2,`0`);return`#${t}${t}${t}`}export{e as t};

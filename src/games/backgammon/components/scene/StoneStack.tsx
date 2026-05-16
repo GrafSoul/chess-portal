@@ -46,19 +46,26 @@ interface PulsatingDotProps {
   x: number;
   /** World Z coordinate of the dot center. */
   z: number;
+  /** Click handler — makes the dot itself act as a click target. */
+  onClick?: (e: { stopPropagation: () => void }) => void;
+  /** Pointer-over handler for cursor feedback. */
+  onPointerOver?: (e: { stopPropagation: () => void }) => void;
+  /** Pointer-out handler to reset cursor. */
+  onPointerOut?: () => void;
 }
 
 /**
  * A pulsating green circle indicating a legal move destination.
  *
- * Matches the Chess/Checkers UX pattern: `circleGeometry` with sinusoidal
- * scale animation driven by `useFrame`. Positioned just above the board
- * surface (or above the last stone if the point is occupied).
+ * Acts as both a visual indicator AND a click target — the green dot itself
+ * is the button the player clicks to move. This eliminates the need for
+ * a separate invisible hit-plane and guarantees the click zone matches
+ * what the player sees.
  *
  * @param props - See {@link PulsatingDotProps}.
  * @returns A pulsating green circle mesh.
  */
-function PulsatingDot({ x, z }: PulsatingDotProps) {
+function PulsatingDot({ x, z, onClick, onPointerOver, onPointerOut }: PulsatingDotProps) {
   const ref = useRef<Mesh>(null);
 
   useFrame(({ clock }) => {
@@ -70,10 +77,13 @@ function PulsatingDot({ x, z }: PulsatingDotProps) {
   return (
     <mesh
       ref={ref}
-      position={[x, BOARD_SURFACE_Y + STONE_HEIGHT + 0.008, z]}
+      position={[x, BOARD_SURFACE_Y + STONE_HEIGHT + 0.01, z]}
       rotation={[-Math.PI / 2, 0, 0]}
+      onClick={onClick}
+      onPointerOver={onPointerOver}
+      onPointerOut={onPointerOut}
     >
-      <circleGeometry args={[STONE_RADIUS * 0.65, 24]} />
+      <circleGeometry args={[STONE_RADIUS, 32]} />
       <meshBasicMaterial
         color="#22c55e"
         transparent
@@ -188,19 +198,14 @@ export const StoneStack = memo(
       if (isLegalDest && layout) {
         return (
           <group>
-            {/* Invisible click plane for empty legal destination — 3.5× radius for easy targeting */}
-            <mesh
-              position={[layout.basePosition.x, BOARD_SURFACE_Y + 0.01, layout.basePosition.z]}
-              rotation={[-Math.PI / 2, 0, 0]}
+            {/* Green dot IS the click target — no separate invisible plane needed */}
+            <PulsatingDot
+              x={layout.basePosition.x}
+              z={layout.basePosition.z}
               onClick={handleClick}
               onPointerOver={handlePointerOver}
               onPointerOut={handlePointerOut}
-            >
-              <planeGeometry args={[STONE_RADIUS * 5, STONE_RADIUS * 5]} />
-              <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-            </mesh>
-            {/* Pulsating green dot — same indicator as occupied destinations */}
-            <PulsatingDot x={layout.basePosition.x} z={layout.basePosition.z} />
+            />
           </group>
         );
       }
@@ -222,7 +227,7 @@ export const StoneStack = memo(
           onPointerOver={handlePointerOver}
           onPointerOut={handlePointerOut}
         >
-          <planeGeometry args={[STONE_RADIUS * 4.5, hitPlaneLength + STONE_RADIUS * 2]} />
+          <planeGeometry args={[STONE_RADIUS * 2.5, hitPlaneLength + STONE_RADIUS * 3]} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
 
@@ -247,11 +252,14 @@ export const StoneStack = memo(
           </mesh>
         )}
 
-        {/* Pulsating green dot — legal move destination (matches Chess/Checkers) */}
+        {/* Pulsating green dot — legal move destination; dot IS the click target */}
         {isLegalDest && (
           <PulsatingDot
             x={layout.basePosition.x}
             z={nextStoneZ}
+            onClick={handleClick}
+            onPointerOver={handlePointerOver}
+            onPointerOut={handlePointerOut}
           />
         )}
       </group>
