@@ -31,6 +31,11 @@ interface DiceRollerProps {
   /** Current game status — determines cup visibility and physics pause state. */
   gameStatus: GameStatus;
   /**
+   * When `true`, the dice cup auto-flips without requiring a pointer click.
+   * Used during AI turns so dice roll autonomously.
+   */
+  autoRoll?: boolean;
+  /**
    * Forwarded to {@link DiceCup} once both dice have settled.
    *
    * @param values - The two settled die face values.
@@ -97,16 +102,16 @@ function TrayWalls() {
  */
 export const DiceRoller = memo(function DiceRoller({
   gameStatus,
+  autoRoll = false,
   onDiceSettled,
 }: DiceRollerProps) {
-  const isRolling = gameStatus === 'rolling';
   const isActive = gameStatus === 'rolling';
 
   return (
-    <Physics gravity={[0, -20, 0]} paused={!isRolling}>
+    <Physics gravity={[0, -20, 0]}>
       <BoardCollider />
       <TrayWalls />
-      <DiceCup isActive={isActive} onDiceSettled={onDiceSettled} />
+      <DiceCup isActive={isActive} autoRoll={autoRoll} onDiceSettled={onDiceSettled} />
     </Physics>
   );
 });

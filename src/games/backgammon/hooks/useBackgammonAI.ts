@@ -26,7 +26,7 @@ import { useBackgammonStore } from '../stores/useBackgammonStore';
 import { useBackgammonSettingsStore } from '../stores/useBackgammonSettingsStore';
 import { BackgammonAIService } from '../ai/BackgammonAIService';
 import { AI_LEVEL_CONFIG } from '../config/aiLevels';
-import type { StoneColor } from '../engine/types';
+import type { StoneColor, BackgammonState } from '../engine/types';
 
 /** Delay before the AI triggers its dice roll, in ms. */
 const AI_ROLL_DELAY_MS = 600;
@@ -77,6 +77,13 @@ export function useBackgammonAI(): void {
    * Using a ref (not state) avoids triggering a re-render on toggle.
    */
   const isThinkingRef = useRef(false);
+  /**
+   * Guard to prevent re-triggering the worker while sub-moves are being
+   * played back sequentially via setTimeout. The effect re-fires when
+   * `dice` changes (after each executeSubMove), but we must NOT launch a
+   * second search during playback.
+   */
+  const isPlayingRef = useRef(false);
 
   // --- Worker lifecycle: mount / unmount -------------------------------------
   useEffect(() => {
@@ -117,6 +124,7 @@ export function useBackgammonAI(): void {
   useEffect(() => {
     if (!isAITurn || gameStatus !== 'choosing' || dice === null) return;
     if (isThinkingRef.current) return;
+    if (isPlayingRef.current) return;
 
     const svc = serviceRef.current;
     if (!svc) return;
@@ -124,16 +132,37 @@ export function useBackgammonAI(): void {
     isThinkingRef.current = true;
     setAIThinking(true);
 
-    // Take a snapshot of the full store state for the worker.
-    // `getState()` is valid outside render — it returns the current Zustand state.
-    const snapshot = useBackgammonStore.getState();
+    // Extract only serializable data fields from the store for the worker.
+    // `getState()` includes Zustand actions (functions) which cannot be cloned
+    // via `postMessage` — sending them would throw a DataCloneError.
+    const s = useBackgammonStore.getState();
+    const snapshot: BackgammonState = {
+      board: s.board,
+      turn: s.turn,
+      dice: s.dice,
+      moveHistory: s.moveHistory,
+      bornOff: s.bornOff,
+      gameStatus: s.gameStatus,
+      winner: s.winner,
+      winType: s.winType,
+      rules: s.rules,
+      isFirstTurn: s.isFirstTurn,
+      headTakenThisTurn: s.headTakenThisTurn,
+      selectedFrom: s.selectedFrom,
+      pendingSequence: s.pendingSequence,
+    };
 
-    let cancelled = false;
+    /**
+     * `searchCancelled` only gates the worker result — NOT the sub-move
+     * execution timeouts. This prevents the effect cleanup (triggered when
+     * `dice` changes after each sub-move) from aborting later moves.
+     */
+    let searchCancelled = false;
 
     svc
       .findBestSequence(snapshot, aiColor)
       .then((seq) => {
-        if (cancelled) return;
+        if (searchCancelled) return;
 
         isThinkingRef.current = false;
         setAIThinking(false);
@@ -145,19 +174,32 @@ export function useBackgammonAI(): void {
         }
 
         // Execute each sub-move with visual pacing so the player can track them.
+        // Each move reads fresh state via getState() to avoid stale closures.
+        // The `isPlayingRef` guard prevents the effect re-trigger (caused by
+        // dice.remaining shrinking) from launching a second worker search.
+        isPlayingRef.current = true;
+
         seq.forEach((move, index) => {
           const delay = AI_THINK_START_DELAY_MS + index * AI_SUBMOVE_INTERVAL_MS;
           window.setTimeout(() => {
-            if (cancelled) return;
-            // The store's `executeSubMove` reads `selectedFrom` internally, but
-            // the AI bypasses point-selection: we need to select the source first.
-            useBackgammonStore.getState().selectFrom(move.from);
-            useBackgammonStore.getState().executeSubMove(move.to, move.pips);
+            const store = useBackgammonStore.getState();
+            // Safety: if the game was reset or ended mid-sequence, bail out.
+            if (store.gameStatus !== 'choosing') {
+              isPlayingRef.current = false;
+              return;
+            }
+            store.selectFrom(move.from);
+            store.executeSubMove(move.to, move.pips);
+
+            // After the last move, clear the playing guard.
+            if (index === seq.length - 1) {
+              isPlayingRef.current = false;
+            }
           }, delay);
         });
       })
       .catch((err: Error) => {
-        if (cancelled) return;
+        if (searchCancelled) return;
         if (err.message === 'Search aborted' || err.message === 'Search stopped') return;
         console.error('Backgammon AI error:', err);
         isThinkingRef.current = false;
@@ -165,7 +207,7 @@ export function useBackgammonAI(): void {
       });
 
     return () => {
-      cancelled = true;
+      searchCancelled = true;
       svc.stop();
       isThinkingRef.current = false;
       setAIThinking(false);

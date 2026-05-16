@@ -56,6 +56,12 @@ interface DiceCupProps {
   /** Show the cup only while `true` (i.e. `gameStatus === 'rolling'`). */
   isActive: boolean;
   /**
+   * When `true`, the cup automatically flips after a short delay without
+   * requiring a pointer click. Used for AI turns so the dice roll
+   * autonomously.
+   */
+  autoRoll?: boolean;
+  /**
    * Called once both dice have settled with their face-up values.
    *
    * @param values - Tuple of the two settled die values `[d1, d2]`.
@@ -123,16 +129,17 @@ const CUP_MAX_DIE_SPEED = 1.8;
 const CUP_CONTAINMENT_RADIUS = 0.55;
 
 /** Consecutive "nearly still" frames required before reading face values. */
-const SETTLE_FRAME_COUNT = 15;
+const SETTLE_FRAME_COUNT = 12;
 
 /** Die centre Y must be below this to be considered "on the board". */
 const ON_BOARD_Y = 0.8;
 
 /**
- * Emergency snap timeout — if dice haven't naturally settled after this
- * many frames (~5 sec at 60fps), force-snap as a last resort.
+ * Emergency snap timeout in milliseconds — if dice haven't naturally
+ * settled within this window, force-snap as a last resort.
+ * Uses wall-clock time (not frame count) to be immune to tab throttling.
  */
-const EMERGENCY_SNAP_FRAMES = 300;
+const EMERGENCY_SNAP_MS = 3000;
 
 
 /**
@@ -288,12 +295,30 @@ const _quat = new THREE.Quaternion();
  */
 export const DiceCup = memo(function DiceCup({
   isActive,
+  autoRoll = false,
   onDiceSettled,
 }: DiceCupProps) {
   const { camera, gl, controls } = useThree();
 
   /** Current phase of the cup animation state machine. */
   const [phase, setPhase] = useState<CupPhase>('idle');
+
+  /**
+   * Ref mirror of `phase` — always up to date, immune to stale closures.
+   * `useFrame` reads this instead of the state variable to avoid missing
+   * transitions when React batches setState calls across frames.
+   */
+  const phaseRef = useRef<CupPhase>('idle');
+
+  /**
+   * Updates both the React state and the ref mirror atomically.
+   * Call this instead of `setPhase` directly so `useFrame` always
+   * reads the latest phase from `phaseRef`.
+   */
+  const updatePhase = useCallback((next: CupPhase) => {
+    phaseRef.current = next;
+    setPhase(next);
+  }, []);
 
   /**
    * Whether the cup visual mesh should be hidden (after dice spill out).
@@ -318,8 +343,8 @@ export const DiceCup = memo(function DiceCup({
   const lastVelocity = useRef(new THREE.Vector2());
   const settledFrames = useRef(0);
   const diceReadValues = useRef<[number, number] | null>(null);
-  /** Frames spent in spilled phase — for emergency snap timeout. */
-  const spillFrames = useRef(0);
+  /** Wall-clock timestamp when spilled phase began — for emergency snap. */
+  const spillStartTime = useRef(0);
 
   /** Target cup position from pointer — kinematic body lerps toward this. */
   const cupTargetPos = useRef(new THREE.Vector3().copy(CUP_REST_POSITION));
@@ -331,18 +356,46 @@ export const DiceCup = memo(function DiceCup({
   const shakeRot = useRef({ x: 0, z: 0 });
   const hasLaunched = useRef(false);
 
+  /** Emergency timer ID — scheduled at spill, fires reading if still stuck. */
+  const emergencyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   /** Frame counter for dice impulses — apply every N frames, not every frame. */
   const shakeFrame = useRef(0);
 
   /** Reset internal refs on mount. */
   useEffect(() => {
     settledFrames.current = 0;
-    spillFrames.current = 0;
+    spillStartTime.current = 0;
     diceReadValues.current = null;
     flipProgress.current = 0;
     hasLaunched.current = false;
     shakeRot.current = { x: 0, z: 0 };
+
+    return () => {
+      if (emergencyTimerRef.current) {
+        clearTimeout(emergencyTimerRef.current);
+        emergencyTimerRef.current = null;
+      }
+    };
   }, []);
+
+  // ---------------------------------------------------------------------------
+  // Auto-roll for AI turns — skip pointer interaction, go straight to flip
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    if (!isActive || !autoRoll) return;
+    if (phaseRef.current !== 'idle') return;
+
+    // Short delay so the cup is visible before it flips
+    const timer = window.setTimeout(() => {
+      if (phaseRef.current === 'idle') {
+        updatePhase('flipping');
+      }
+    }, 400);
+
+    return () => window.clearTimeout(timer);
+  }, [isActive, autoRoll, updatePhase]);
 
   // ---------------------------------------------------------------------------
   // Pointer handlers
@@ -397,8 +450,8 @@ export const DiceCup = memo(function DiceCup({
     // Re-enable orbit controls after cup interaction
     if (controls) (controls as unknown as { enabled: boolean }).enabled = true;
 
-    setPhase('flipping');
-  }, [stableOnMove, controls]);
+    updatePhase('flipping');
+  }, [stableOnMove, controls, updatePhase]);
 
   useEffect(() => {
     stableOnUpRef.current = stableOnUp;
@@ -407,7 +460,7 @@ export const DiceCup = memo(function DiceCup({
   /** Pointer-down on cup mesh — start dragging. */
   const handleCupPointerDown = useCallback(
     (event: { stopPropagation: () => void; nativeEvent: PointerEvent }) => {
-      if (!isActive || phase !== 'idle') return;
+      if (!isActive || phaseRef.current !== 'idle') return;
       // R3F-level stopPropagation — prevents OrbitControls from capturing this drag.
       event.stopPropagation();
 
@@ -415,7 +468,7 @@ export const DiceCup = memo(function DiceCup({
       if (controls) (controls as unknown as { enabled: boolean }).enabled = false;
 
       isDragging.current = true;
-      setPhase('held');
+      updatePhase('held');
 
       const pos = getPointerXZ(event.nativeEvent);
       if (pos) {
@@ -425,7 +478,7 @@ export const DiceCup = memo(function DiceCup({
       document.addEventListener('pointermove', stableOnMove);
       document.addEventListener('pointerup', stableOnUp);
     },
-    [isActive, phase, getPointerXZ, stableOnMove, stableOnUp, controls],
+    [isActive, getPointerXZ, stableOnMove, stableOnUp, controls, updatePhase],
   );
 
   // ---------------------------------------------------------------------------
@@ -435,11 +488,15 @@ export const DiceCup = memo(function DiceCup({
   useFrame((_state, delta) => {
     if (!isActive) return;
 
+    // Read phase from ref — immune to React batching / stale closures.
+    const p = phaseRef.current;
+
+
     // ── Idle / Held ──────────────────────────────────────────────────────
-    if (phase === 'idle' || phase === 'held') {
+    if (p === 'idle' || p === 'held') {
       const target = cupTargetPos.current;
       const smoothed = cupBodyPos.current;
-      const lerpFactor = phase === 'held' ? 0.12 : 1;
+      const lerpFactor = p === 'held' ? 0.12 : 1;
       smoothed.x = THREE.MathUtils.lerp(smoothed.x, target.x, lerpFactor);
       smoothed.z = THREE.MathUtils.lerp(smoothed.z, target.z, lerpFactor);
       smoothed.y = target.y;
@@ -450,7 +507,7 @@ export const DiceCup = memo(function DiceCup({
         });
       }
 
-      if (phase === 'held') {
+      if (p === 'held') {
         shakeRot.current.x += (Math.random() - 0.5) * RATTLE_AMPLITUDE;
         shakeRot.current.z += (Math.random() - 0.5) * RATTLE_AMPLITUDE;
         shakeRot.current.x *= 0.82;
@@ -519,11 +576,11 @@ export const DiceCup = memo(function DiceCup({
     }
 
     // ── Flip animation ───────────────────────────────────────────────────
-    if (phase === 'flipping' && cupVisualRef.current) {
+    if (p === 'flipping' && cupVisualRef.current) {
       cupVisualRef.current.rotation.x = 0;
       cupVisualRef.current.rotation.z = 0;
     }
-    if (phase === 'flipping') {
+    if (p === 'flipping') {
       flipProgress.current += delta * 3.5;
       const t = Math.min(flipProgress.current, 1);
       const cup = cupBodyPos.current;
@@ -543,7 +600,36 @@ export const DiceCup = memo(function DiceCup({
       if (t >= 1 && !hasLaunched.current) {
         hasLaunched.current = true;
         setCupHidden(true);
-        setPhase('spilled');
+        updatePhase('spilled');
+
+        // Schedule emergency settle via direct setTimeout — fires even if
+        // requestAnimationFrame is throttled (background tab, automation).
+        emergencyTimerRef.current = setTimeout(() => {
+          if (phaseRef.current === 'spilled' || phaseRef.current === 'reading') {
+            // Force-read dice values directly, bypassing useFrame + React state
+            const d1 = die1Ref.current;
+            const d2 = die2Ref.current;
+            if (d1 && d2 && diceReadValues.current === null) {
+              const v1 = readFaceValue(d1);
+              const v2 = readFaceValue(d2);
+              diceReadValues.current = [v1, v2];
+
+              for (const body of [d1, d2]) {
+                body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+                body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+                snapToNearestFace(body);
+                const pos = body.translation();
+                body.setTranslation({ x: pos.x, y: 0.405, z: pos.z }, true);
+                body.setGravityScale(0, true);
+                body.sleep();
+              }
+
+              phaseRef.current = 'done';
+              setPhase('done');
+              onDiceSettled([v1, v2]);
+            }
+          }
+        }, EMERGENCY_SNAP_MS);
 
         const launch = (body: RapierRigidBody) => {
           body.setGravityScale(1, true);
@@ -573,11 +659,14 @@ export const DiceCup = memo(function DiceCup({
     }
 
     // ── Spilled — natural physics settle ─────────────────────────────────
-    if (phase === 'spilled') {
+    if (p === 'spilled') {
       die1Ref.current?.setGravityScale(1.5, false);
       die2Ref.current?.setGravityScale(1.5, false);
 
-      spillFrames.current++;
+      // Record wall-clock start time on first spilled frame
+      if (spillStartTime.current === 0) {
+        spillStartTime.current = performance.now();
+      }
 
       const isFlatOnFace = (body: RapierRigidBody): boolean => {
         const rot = body.rotation();
@@ -599,7 +688,7 @@ export const DiceCup = memo(function DiceCup({
         const ang = body.angvel();
         const linMag = Math.sqrt(lin.x ** 2 + lin.y ** 2 + lin.z ** 2);
         const angMag = Math.sqrt(ang.x ** 2 + ang.y ** 2 + ang.z ** 2);
-        return linMag < 0.08 && angMag < 0.08 && isFlatOnFace(body);
+        return linMag < 0.12 && angMag < 0.12 && isFlatOnFace(body);
       };
 
       const bothSettled =
@@ -613,22 +702,22 @@ export const DiceCup = memo(function DiceCup({
       }
 
       if (settledFrames.current > SETTLE_FRAME_COUNT) {
-        setPhase('reading');
+        updatePhase('reading');
       }
 
-      if (spillFrames.current > EMERGENCY_SNAP_FRAMES) {
-        setPhase('reading');
+      if (performance.now() - spillStartTime.current > EMERGENCY_SNAP_MS) {
+        updatePhase('reading');
       }
     }
 
     // ── Read face values + freeze ────────────────────────────────────────
-    if (phase === 'reading' && diceReadValues.current === null) {
+    if (p === 'reading' && diceReadValues.current === null) {
       if (die1Ref.current && die2Ref.current) {
         const v1 = readFaceValue(die1Ref.current);
         const v2 = readFaceValue(die2Ref.current);
         diceReadValues.current = [v1, v2];
 
-        const isEmergency = spillFrames.current > EMERGENCY_SNAP_FRAMES;
+        const isEmergency = performance.now() - spillStartTime.current > EMERGENCY_SNAP_MS;
 
         for (const body of [die1Ref.current, die2Ref.current]) {
           body.setLinvel({ x: 0, y: 0, z: 0 }, true);
@@ -644,11 +733,59 @@ export const DiceCup = memo(function DiceCup({
           body.sleep();
         }
 
-        setPhase('done');
+        updatePhase('done');
         onDiceSettled([v1, v2]);
       }
     }
   });
+
+  // ---------------------------------------------------------------------------
+  // Emergency setTimeout — fires even if the render loop is throttled
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    if (phase !== 'spilled') return;
+
+    const timer = window.setTimeout(() => {
+      // Only force-snap if still spilled (natural settle didn't happen)
+      if (phaseRef.current === 'spilled') {
+        updatePhase('reading');
+      }
+    }, EMERGENCY_SNAP_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [phase, updatePhase]);
+
+  // ---------------------------------------------------------------------------
+  // Force-read on entering reading phase (even without useFrame ticking)
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    if (phase !== 'reading') return;
+    if (diceReadValues.current !== null) return;
+
+    const d1 = die1Ref.current;
+    const d2 = die2Ref.current;
+    if (!d1 || !d2) return;
+
+    const v1 = readFaceValue(d1);
+    const v2 = readFaceValue(d2);
+    diceReadValues.current = [v1, v2];
+
+    // Freeze dice
+    for (const body of [d1, d2]) {
+      body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+      snapToNearestFace(body);
+      const pos = body.translation();
+      body.setTranslation({ x: pos.x, y: 0.405, z: pos.z }, true);
+      body.setGravityScale(0, true);
+      body.sleep();
+    }
+
+    updatePhase('done');
+    onDiceSettled([v1, v2]);
+  }, [phase, updatePhase, onDiceSettled]);
 
   // ---------------------------------------------------------------------------
   // Cleanup pointer listeners on unmount

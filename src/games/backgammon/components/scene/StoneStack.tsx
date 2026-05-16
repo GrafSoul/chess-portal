@@ -23,8 +23,10 @@
  * ```
  */
 
-import { memo, useMemo, useCallback } from 'react';
+import { memo, useMemo, useCallback, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import type { Mesh } from 'three';
 import { BackgammonStone } from './BackgammonStone';
 import {
   POINT_LAYOUTS,
@@ -35,6 +37,52 @@ import {
   stoneSpacing,
 } from './boardLayout';
 import type { PointState, PointIndex } from '../../engine/types';
+
+/* ─── PulsatingDot ──────────────────────────────────────────────────────── */
+
+/** Props for {@link PulsatingDot}. */
+interface PulsatingDotProps {
+  /** World X coordinate of the dot center. */
+  x: number;
+  /** World Z coordinate of the dot center. */
+  z: number;
+}
+
+/**
+ * A pulsating green circle indicating a legal move destination.
+ *
+ * Matches the Chess/Checkers UX pattern: `circleGeometry` with sinusoidal
+ * scale animation driven by `useFrame`. Positioned just above the board
+ * surface (or above the last stone if the point is occupied).
+ *
+ * @param props - See {@link PulsatingDotProps}.
+ * @returns A pulsating green circle mesh.
+ */
+function PulsatingDot({ x, z }: PulsatingDotProps) {
+  const ref = useRef<Mesh>(null);
+
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    const scale = 1 + Math.sin(clock.elapsedTime * 3) * 0.15;
+    ref.current.scale.setScalar(scale);
+  });
+
+  return (
+    <mesh
+      ref={ref}
+      position={[x, BOARD_SURFACE_Y + STONE_HEIGHT + 0.008, z]}
+      rotation={[-Math.PI / 2, 0, 0]}
+    >
+      <circleGeometry args={[STONE_RADIUS * 0.65, 24]} />
+      <meshBasicMaterial
+        color="#22c55e"
+        transparent
+        opacity={0.6}
+        depthWrite={false}
+      />
+    </mesh>
+  );
+}
 
 /** Props for `StoneStack`. */
 interface StoneStackProps {
@@ -136,11 +184,11 @@ export const StoneStack = memo(
 
     // Now that every hook has been called, it's safe to bail out.
     if (color === null || count === 0 || !layout) {
-      // Still render legal dest ring for empty points that are valid destinations
+      // Still render legal dest indicator for empty points that are valid destinations
       if (isLegalDest && layout) {
         return (
           <group>
-            {/* Invisible click plane for empty legal destination */}
+            {/* Invisible click plane for empty legal destination — 3.5× radius for easy targeting */}
             <mesh
               position={[layout.basePosition.x, BOARD_SURFACE_Y + 0.01, layout.basePosition.z]}
               rotation={[-Math.PI / 2, 0, 0]}
@@ -148,26 +196,25 @@ export const StoneStack = memo(
               onPointerOver={handlePointerOver}
               onPointerOut={handlePointerOut}
             >
-              <planeGeometry args={[STONE_RADIUS * 2, STONE_RADIUS * 2]} />
+              <planeGeometry args={[STONE_RADIUS * 5, STONE_RADIUS * 5]} />
               <meshBasicMaterial transparent opacity={0} depthWrite={false} />
             </mesh>
-            {/* Visible green ring */}
-            <mesh
-              position={[layout.basePosition.x, BOARD_SURFACE_Y + 0.004, layout.basePosition.z]}
-              rotation={[-Math.PI / 2, 0, 0]}
-            >
-              <ringGeometry args={[STONE_RADIUS * 0.55, STONE_RADIUS * 0.9, 32]} />
-              <meshBasicMaterial color="#00E676" transparent opacity={0.9} depthWrite={false} side={THREE.DoubleSide} />
-            </mesh>
+            {/* Pulsating green dot — same indicator as occupied destinations */}
+            <PulsatingDot x={layout.basePosition.x} z={layout.basePosition.z} />
           </group>
         );
       }
       return null;
     }
 
+    // Top stone Z position — for selection ring placement
+    const topStoneZ = stonePositions.length > 0
+      ? stonePositions[stonePositions.length - 1][2]
+      : safeLayout.basePosition.z;
+
     return (
       <group>
-        {/* Invisible click-catcher plane — guaranteed raycast hit */}
+        {/* Invisible click-catcher plane — 3× radius width for easy targeting */}
         <mesh
           position={[safeLayout.basePosition.x, BOARD_SURFACE_Y + STONE_HEIGHT + 0.01, hitPlaneZ]}
           rotation={[-Math.PI / 2, 0, 0]}
@@ -175,40 +222,37 @@ export const StoneStack = memo(
           onPointerOver={handlePointerOver}
           onPointerOut={handlePointerOut}
         >
-          <planeGeometry args={[STONE_RADIUS * 2, hitPlaneLength]} />
+          <planeGeometry args={[STONE_RADIUS * 4.5, hitPlaneLength + STONE_RADIUS * 2]} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
 
-        {/* Visible stone meshes */}
+        {/* Visible stone meshes — no selection glow, only ring below */}
         {stonePositions.map((pos, i) => (
           <BackgammonStone
             key={i}
             position={pos}
             color={color}
-            selected={isSelected}
+            selected={false}
           />
         ))}
 
-        {/* Gold ring — selected source point (on first stone) */}
+        {/* Gold selection ring — under the TOP stone of the selected stack */}
         {isSelected && (
           <mesh
-            position={[layout.basePosition.x, BOARD_SURFACE_Y + 0.005, layout.basePosition.z]}
+            position={[layout.basePosition.x, BOARD_SURFACE_Y + STONE_HEIGHT + 0.006, topStoneZ]}
             rotation={[-Math.PI / 2, 0, 0]}
           >
-            <ringGeometry args={[STONE_RADIUS * 1.1, STONE_RADIUS * 1.35, 32]} />
-            <meshBasicMaterial color="#FFD700" transparent opacity={0.85} depthWrite={false} side={THREE.DoubleSide} />
+            <ringGeometry args={[STONE_RADIUS * 0.6, STONE_RADIUS * 1.05, 32]} />
+            <meshBasicMaterial color="#fbbf24" transparent opacity={0.9} depthWrite={false} side={THREE.DoubleSide} />
           </mesh>
         )}
 
-        {/* Green ring — legal move destination (at next available position) */}
+        {/* Pulsating green dot — legal move destination (matches Chess/Checkers) */}
         {isLegalDest && (
-          <mesh
-            position={[layout.basePosition.x, BOARD_SURFACE_Y + 0.004, nextStoneZ]}
-            rotation={[-Math.PI / 2, 0, 0]}
-          >
-            <ringGeometry args={[STONE_RADIUS * 0.55, STONE_RADIUS * 0.9, 32]} />
-            <meshBasicMaterial color="#00E676" transparent opacity={0.9} depthWrite={false} side={THREE.DoubleSide} />
-          </mesh>
+          <PulsatingDot
+            x={layout.basePosition.x}
+            z={nextStoneZ}
+          />
         )}
       </group>
     );

@@ -32,6 +32,7 @@ import { BearOffTray } from './BearOffTray';
 import { DiceRoller } from './DiceRoller';
 import { BackgammonTutorialOverlay } from './BackgammonTutorialOverlay';
 import { useBackgammonStore } from '../../stores/useBackgammonStore';
+import { useBackgammonSettingsStore } from '../../stores/useBackgammonSettingsStore';
 import { useBackgammonDisplayedBoardState } from '../../hooks/useBackgammonDisplayedBoardState';
 import { generateSubMoves } from '../../engine/moveGenerator';
 import {
@@ -40,6 +41,8 @@ import {
   BEAR_OFF_WHITE_Z,
   BEAR_OFF_BLACK_Z,
   BOARD_SURFACE_Y,
+  BOARD_WIDTH,
+  BOARD_DEPTH,
 } from './boardLayout';
 import type { PointIndex, PointState } from '../../engine/types';
 
@@ -56,13 +59,19 @@ const BLACK_TRAY_POSITION = new Vector3(BEAR_OFF_X, BOARD_SURFACE_Y, BEAR_OFF_BL
  */
 export function BackgammonScene() {
   // ── Display-layer data (tutorial or live game) ─────────────────────────
-  const { board, bornOff, selectedFrom, isInteractive, tutorialActive } =
+  const { board, bornOff, selectedFrom, tutorialActive } =
     useBackgammonDisplayedBoardState();
 
   // ── Live game mechanics (always from the real store) ───────────────────
   const gameStatus = useBackgammonStore((s) => s.gameStatus);
   const dice = useBackgammonStore((s) => s.dice);
+  const turn = useBackgammonStore((s) => s.turn);
+  const gameMode = useBackgammonStore((s) => s.gameMode);
   const onDiceSettled = useBackgammonStore((s) => s.onDiceSettled);
+  const playerColor = useBackgammonSettingsStore((s) => s.playerColor);
+
+  /** `true` when the AI should control dice rolling (auto-flip the cup). */
+  const isAITurn = gameMode === 'ai' && turn !== playerColor;
 
   /**
    * Compute the set of legal destination point indices for the current
@@ -200,6 +209,28 @@ export function BackgammonScene() {
         resolution={512}
       />
 
+      {/*
+       * Board-wide click catcher — prevents OrbitControls from capturing
+       * clicks that land on the board surface. Deselects any selected
+       * stone when an empty area is clicked.
+       */}
+      <mesh
+        position={[0, BOARD_SURFACE_Y + 0.01, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        onClick={(e) => {
+          e.stopPropagation();
+          // Deselect any currently selected stone
+          const store = useBackgammonStore.getState();
+          if (store.selectedFrom !== null) {
+            store.selectFrom(null);
+          }
+        }}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <planeGeometry args={[BOARD_WIDTH + 2, BOARD_DEPTH + 2]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+
       {/* Static board geometry */}
       <BackgammonBoard />
 
@@ -224,7 +255,7 @@ export function BackgammonScene() {
 
       {/* Physics dice roller — suppressed during tutorial to keep scene clean */}
       {!tutorialActive && (gameStatus === 'rolling' || gameStatus === 'choosing') && (
-        <DiceRoller gameStatus={gameStatus} onDiceSettled={onDiceSettled} />
+        <DiceRoller gameStatus={gameStatus} autoRoll={isAITurn} onDiceSettled={onDiceSettled} />
       )}
     </>
   );

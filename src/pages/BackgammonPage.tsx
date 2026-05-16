@@ -84,6 +84,18 @@ export function BackgammonPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Auto-transition to 'rolling' when it is the player's turn.
+  // This makes the dice cup appear automatically — the player just clicks
+  // the cup instead of first clicking "Roll" button then clicking the cup.
+  useEffect(() => {
+    if (gameStatus === 'idle' && turn === playerColor && !isAIThinking) {
+      const timer = window.setTimeout(() => {
+        rollDice();
+      }, 400);
+      return () => window.clearTimeout(timer);
+    }
+  }, [gameStatus, turn, playerColor, isAIThinking, rollDice]);
+
   // ── Derived display values ─────────────────────────────────────────────────
 
   /** Opponent's color is the complement of the human player's color. */
