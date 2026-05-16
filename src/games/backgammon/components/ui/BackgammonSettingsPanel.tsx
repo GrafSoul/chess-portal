@@ -36,6 +36,7 @@ import type { StoneColor } from '../../engine/types';
 import type { BackgammonGameMode } from '../../stores/useBackgammonStore';
 import { useEscapeClose } from '../../../../core/hooks/useEscapeClose';
 import { useTranslation } from '../../../../core/i18n/useTranslation';
+import { LOCALE_LABELS, type Locale } from '../../../../core/i18n/translations';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -161,7 +162,7 @@ export function BackgammonSettingsPanel({
   onClose,
   onResetRequired,
 }: BackgammonSettingsPanelProps) {
-  const { t } = useTranslation();
+  const { t, locale, setLocale } = useTranslation();
   useEscapeClose(isOpen, onClose);
 
   const {
@@ -279,6 +280,27 @@ export function BackgammonSettingsPanel({
 
             {/* ── Panel body ───────────────────────────────────────────── */}
             <div className="flex-1 px-5 py-4">
+
+              {/* Language */}
+              <div className={sectionClass}>
+                <span className={labelClass}>{t('settings.language')}</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {(Object.keys(LOCALE_LABELS) as Locale[]).map((lang) => (
+                    <button
+                      key={lang}
+                      type="button"
+                      onClick={() => setLocale(lang)}
+                      className={`px-3 py-2.5 text-[12px] font-medium rounded-lg border transition-all cursor-pointer
+                        ${locale === lang
+                          ? 'bg-accent/15 border-accent text-accent'
+                          : 'bg-bg-hover/50 border-border-subtle text-text-secondary hover:border-border-primary'
+                        }`}
+                    >
+                      {LOCALE_LABELS[lang]}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               {/* Game mode */}
               <div className={sectionClass}>
